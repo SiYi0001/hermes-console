@@ -20,6 +20,7 @@ class AppState {
   final List<SharedFile> sharedFiles;
   final List<LogItem> logs;
   final List<AppNotification> notifications;
+  final AgentProfile profile;
 
   const AppState({
     required this.memories,
@@ -34,6 +35,7 @@ class AppState {
     required this.sharedFiles,
     required this.logs,
     required this.notifications,
+    required this.profile,
   });
 
   AppState copyWith({
@@ -49,6 +51,7 @@ class AppState {
     List<SharedFile>? sharedFiles,
     List<LogItem>? logs,
     List<AppNotification>? notifications,
+    AgentProfile? profile,
   }) =>
       AppState(
         memories: memories ?? this.memories,
@@ -63,6 +66,7 @@ class AppState {
         sharedFiles: sharedFiles ?? this.sharedFiles,
         logs: logs ?? this.logs,
         notifications: notifications ?? this.notifications,
+        profile: profile ?? this.profile,
       );
 }
 
@@ -206,6 +210,8 @@ class AppStateNotifier extends StateNotifier<AppState> {
   void pushNotification(AppNotification n) =>
       state = state.copyWith(notifications: [n, ...state.notifications].take(100).toList());
   void clearNotifications() => state = state.copyWith(notifications: const []);
+
+  void updateProfile(AgentProfile p) => state = state.copyWith(profile: p);
 }
 
 /// Provider consumed by every advanced screen.
@@ -448,5 +454,19 @@ AppState _seed() {
         read: true,
       ),
     ],
+    profile: const AgentProfile(
+      id: 'p1',
+      name: 'John Developer',
+      email: 'john@hermes.dev',
+      membership: 'Pro Member',
+      sessions: 127,
+      commands: 2400,
+      skills: 18,
+      apiCalls: 12450,
+      storageMb: 845,
+      bandwidthGb: 2,
+      storageMaxMb: 2048,
+      bandwidthMaxGb: 10,
+    ),
   );
 }

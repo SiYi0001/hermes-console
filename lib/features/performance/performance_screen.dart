@@ -2,8 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/theme/hermes_theme.dart';
+import '../../core/network/p2p_data_channel.dart';
 
-/// Performance Monitoring Screen
+/// Performance Monitoring Screen.
+/// - System resource gauges (CPU/Memory/Network) use simulated real-time data
+///   because full platform channel access requires native bindings.
+/// - P2P connection metrics are fully bound to connectionMetricsProvider.
 class PerformanceScreen extends ConsumerStatefulWidget {
   const PerformanceScreen({super.key});
 
@@ -13,13 +17,16 @@ class PerformanceScreen extends ConsumerStatefulWidget {
 
 class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   Timer? _refreshTimer;
-  
-  // Simulated metrics
+
+  // Simulated system resource metrics (require native platform channels to be real)
   double _cpuUsage = 0;
   double _memoryUsage = 0;
   double _networkUsage = 0;
-  int _activeConnections = 0;
-  double _avgLatency = 0;
+
+  // Ring-buffer history (last 60 samples)
+  final List<double> _cpuHistory = [];
+  final List<double> _memoryHistory = [];
+  final List<double> _networkHistory = [];
 
   @override
   void initState() {
@@ -40,11 +47,17 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         return;
       }
       setState(() {
-        _cpuUsage = 15 + (DateTime.now().millisecondsSinceEpoch % 30).toDouble();
-        _memoryUsage = 45 + (DateTime.now().millisecondsSinceEpoch % 20).toDouble();
-        _networkUsage = 2 + (DateTime.now().millisecondsSinceEpoch % 5).toDouble();
-        _activeConnections = 3 + (DateTime.now().millisecondsSinceEpoch % 2);
-        _avgLatency = 20 + (DateTime.now().millisecondsSinceEpoch % 15).toDouble();
+        final seed = DateTime.now().millisecondsSinceEpoch;
+        _cpuUsage = (15 + (seed % 30)).toDouble();
+        _memoryUsage = (45 + (seed % 20)).toDouble();
+        _networkUsage = (2 + (seed % 5)).toDouble();
+
+        _cpuHistory.add(_cpuUsage);
+        if (_cpuHistory.length > 60) _cpuHistory.removeAt(0);
+        _memoryHistory.add(_memoryUsage);
+        if (_memoryHistory.length > 60) _memoryHistory.removeAt(0);
+        _networkHistory.add(_networkUsage);
+        if (_networkHistory.length > 60) _networkHistory.removeAt(0);
       });
     });
   }
@@ -64,34 +77,16 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
-              if (value == 'export') {
-                _exportMetrics();
-              } else if (value == 'alerts') {
-                _configureAlerts();
+            color: HermesTheme.surfaceElevated,
+            onSelected: (v) {
+              if (v == 'export') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Exporting metrics…'), behavior: SnackBarBehavior.floating),
+                );
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'export',
-                child: Row(
-                  children: [
-                    Icon(Icons.download, size: 18),
-                    SizedBox(width: 8),
-                    Text('Export Metrics'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'alerts',
-                child: Row(
-                  children: [
-                    Icon(Icons.notifications, size: 18),
-                    SizedBox(width: 8),
-                    Text('Configure Alerts'),
-                  ],
-                ),
-              ),
+              const PopupMenuItem(value: 'export', child: Row(children: [Icon(Icons.download, size: 18), SizedBox(width: 8), Text('Export Metrics')])),
             ],
           ),
         ],
@@ -101,22 +96,20 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _OverviewCard(
-              cpuUsage: _cpuUsage,
-              memoryUsage: _memoryUsage,
-              networkUsage: _networkUsage,
-              connections: _activeConnections,
-              latency: _avgLatency,
-            ),
+            const _SectionHeader(title: 'P2P Connection', icon: Icons.hub),
+            const SizedBox(height: 12),
+            _P2POverviewCard(),
             const SizedBox(height: 24),
+            const _SectionHeader(title: 'System Resources', icon: Icons.memory),
+            const SizedBox(height: 12),
             _ResourceCard(
               title: 'CPU Usage',
               value: _cpuUsage,
               maxValue: 100,
               unit: '%',
               color: HermesTheme.primaryBlue,
-              icon: Icons.memory,
-              history: _generateHistory(30),
+              icon: Icons.developer_board,
+              history: List.from(_cpuHistory),
             ),
             const SizedBox(height: 16),
             _ResourceCard(
@@ -126,7 +119,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
               unit: '%',
               color: HermesTheme.successGreen,
               icon: Icons.storage,
-              history: _generateHistory(30),
+              history: List.from(_memoryHistory),
             ),
             const SizedBox(height: 16),
             _ResourceCard(
@@ -136,218 +129,291 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
               unit: 'MB/s',
               color: HermesTheme.warningAmber,
               icon: Icons.network_check,
-              history: _generateHistory(30),
+              history: List.from(_networkHistory),
             ),
             const SizedBox(height: 24),
-            _ConnectionsCard(connections: _activeConnections),
+            const _SectionHeader(title: 'Data Transfer', icon: Icons.swap_vert),
+            const SizedBox(height: 12),
+            _DataTransferCard(),
             const SizedBox(height: 24),
-            _LatencyCard(latency: _avgLatency),
-            const SizedBox(height: 24),
-            _SystemInfoCard(),
+            const _SectionHeader(title: 'Recent Activity', icon: Icons.history),
+            const SizedBox(height: 12),
+            _ActivityCard(),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
+}
 
-  List<double> _generateHistory(int count) {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    return List.generate(count, (i) {
-      return 30 + (now % 50) + (i * 0.5);
-    });
-  }
+// ─── Section Header ────────────────────────────────────────────────────────────
 
-  void _exportMetrics() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Exporting metrics...'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
 
-  void _configureAlerts() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: HermesTheme.surfaceDark,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => const _AlertSettingsSheet(),
+  const _SectionHeader({required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: HermesTheme.textSecondary, size: 18),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: HermesTheme.textSecondary)),
+      ],
     );
   }
 }
 
-class _OverviewCard extends StatelessWidget {
-  final double cpuUsage;
-  final double memoryUsage;
-  final double networkUsage;
-  final int connections;
-  final double latency;
+// ─── P2P Overview Card (Real) ────────────────────────────────────────────────
 
-  const _OverviewCard({
-    required this.cpuUsage,
-    required this.memoryUsage,
-    required this.networkUsage,
-    required this.connections,
-    required this.latency,
-  });
-
+class _P2POverviewCard extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final m = ref.watch(connectionMetricsProvider);
+    final connected = m.peerId != null;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            HermesTheme.primaryBlue.withOpacity(0.15),
-            HermesTheme.secondaryPurple.withOpacity(0.1),
-          ],
+          colors: [HermesTheme.primaryBlue.withOpacity(0.12), HermesTheme.secondaryPurple.withOpacity(0.08)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: HermesTheme.primaryBlue.withOpacity(0.2),
-        ),
+        border: Border.all(color: HermesTheme.primaryBlue.withOpacity(0.15)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 10,
+                height: 10,
                 decoration: BoxDecoration(
-                  color: HermesTheme.primaryBlue.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.analytics,
-                  color: HermesTheme.primaryBlue,
-                  size: 28,
+                  shape: BoxShape.circle,
+                  color: connected ? HermesTheme.successGreen : HermesTheme.errorRed,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'System Performance',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'Real-time monitoring',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: HermesTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: HermesTheme.successGreen.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 14,
-                      color: HermesTheme.successGreen,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Healthy',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: HermesTheme.successGreen,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(width: 8),
+              Text(connected ? 'Connected' : 'Disconnected', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: connected ? HermesTheme.successGreen : HermesTheme.errorRed)),
+              const Spacer(),
+              Text('Session ${m.sessionId}', style: const TextStyle(fontSize: 11, color: HermesTheme.textTertiary)),
             ],
           ),
-          const SizedBox(height: 24),
+          if (connected) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _MiniMetric(label: 'Peer', value: m.peerName ?? m.peerId ?? '—', color: Colors.white)),
+                Expanded(child: _MiniMetric(label: 'Latency', value: '${m.latencyMs}ms', color: _latencyColor(m.latencyMs))),
+                Expanded(child: _MiniMetric(label: 'Pkt Loss', value: '${m.packetLossPct}%', color: _pktLossColor(m.packetLossPct))),
+                Expanded(child: _MiniMetric(label: 'Uptime', value: _formatUptime(m.uptime), color: HermesTheme.successGreen)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _latencyColor(int ms) {
+    if (ms < 50) return HermesTheme.successGreen;
+    if (ms < 150) return HermesTheme.warningAmber;
+    return HermesTheme.errorRed;
+  }
+
+  Color _pktLossColor(int pct) {
+    if (pct < 1) return HermesTheme.successGreen;
+    if (pct < 5) return HermesTheme.warningAmber;
+    return HermesTheme.errorRed;
+  }
+
+  String _formatUptime(Duration? d) {
+    if (d == null) return '—';
+    if (d.inDays > 0) return '${d.inDays}d ${d.inHours.remainder(24)}h';
+    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+    return '${d.inMinutes}m ${d.inSeconds.remainder(60)}s';
+  }
+}
+
+class _MiniMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _MiniMetric({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 10, color: HermesTheme.textSecondary)),
+      ],
+    );
+  }
+}
+
+// ─── Data Transfer Card (Real) ─────────────────────────────────────────────────
+
+class _DataTransferCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final m = ref.watch(connectionMetricsProvider);
+
+    return _Card(
+      title: 'Data Transfer',
+      icon: Icons.swap_vert,
+      child: Column(
+        children: [
+          _DataRow(label: 'Bytes Sent', value: _formatBytes(m.bytesSent), icon: Icons.upload, color: HermesTheme.primaryBlue),
+          const SizedBox(height: 12),
+          _DataRow(label: 'Bytes Received', value: _formatBytes(m.bytesReceived), icon: Icons.download, color: HermesTheme.successGreen),
+          const SizedBox(height: 12),
+          _DataRow(label: 'Total', value: _formatBytes(m.bytesSent + m.bytesReceived), icon: Icons.sync_alt, color: HermesTheme.secondaryPurple),
+        ],
+      ),
+    );
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
+}
+
+class _DataRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _DataRow({required this.label, required this.value, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: color, size: 18)),
+        const SizedBox(width: 12),
+        Expanded(child: Text(label, style: const TextStyle(color: HermesTheme.textSecondary, fontSize: 13))),
+        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 14)),
+      ],
+    );
+  }
+}
+
+// ─── Activity Card (Real) ─────────────────────────────────────────────────────
+
+class _ActivityCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final logs = ref.watch(activityLogProvider);
+    final recent = logs.take(10).toList();
+
+    return _Card(
+      title: 'Recent Activity',
+      icon: Icons.history,
+      child: recent.isEmpty
+          ? const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('No recent activity', style: TextStyle(color: HermesTheme.textSecondary, fontSize: 13)))
+          : Column(children: recent.map((log) => _ActivityRow(log: log)).toList()),
+    );
+  }
+}
+
+class _ActivityRow extends StatelessWidget {
+  final ActivityLogEntry log;
+
+  const _ActivityRow({required this.log});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(_levelIcon(log.level), size: 14, color: _levelColor(log.level)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(log.event, style: const TextStyle(color: HermesTheme.textSecondary, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          const SizedBox(width: 8),
+          Text(_formatTime(log.time), style: const TextStyle(color: HermesTheme.textTertiary, fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  IconData _levelIcon(ActivityLevel level) {
+    switch (level) {
+      case ActivityLevel.error: return Icons.error;
+      case ActivityLevel.warning: return Icons.warning;
+      case ActivityLevel.success: return Icons.check_circle;
+      case ActivityLevel.info: return Icons.info;
+    }
+  }
+
+  Color _levelColor(ActivityLevel level) {
+    switch (level) {
+      case ActivityLevel.error: return HermesTheme.errorRed;
+      case ActivityLevel.warning: return HermesTheme.warningAmber;
+      case ActivityLevel.success: return HermesTheme.successGreen;
+      case ActivityLevel.info: return HermesTheme.primaryBlue;
+    }
+  }
+
+  String _formatTime(DateTime t) {
+    final diff = DateTime.now().difference(t);
+    if (diff.inMinutes < 1) return 'now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+}
+
+// ─── Shared Card ──────────────────────────────────────────────────────────────
+
+class _Card extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  const _Card({required this.title, required this.icon, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: HermesTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: HermesTheme.surfaceOverlay),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _OverviewStat(
-                label: 'CPU',
-                value: '${cpuUsage.toStringAsFixed(1)}%',
-                color: HermesTheme.primaryBlue,
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: HermesTheme.surfaceOverlay,
-              ),
-              _OverviewStat(
-                label: 'Memory',
-                value: '${memoryUsage.toStringAsFixed(1)}%',
-                color: HermesTheme.successGreen,
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: HermesTheme.surfaceOverlay,
-              ),
-              _OverviewStat(
-                label: 'Latency',
-                value: '${latency.toStringAsFixed(0)}ms',
-                color: HermesTheme.warningAmber,
-              ),
+              Icon(icon, color: HermesTheme.primaryBlue, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             ],
           ),
+          const SizedBox(height: 16),
+          child,
         ],
       ),
     );
   }
 }
 
-class _OverviewStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _OverviewStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: HermesTheme.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-}
+// ─── Resource Card (Simulated) ────────────────────────────────────────────────
 
 class _ResourceCard extends StatelessWidget {
   final String title;
@@ -370,68 +436,35 @@ class _ResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final percentage = (value / maxValue).clamp(0.0, 1.0);
-    
+    final pct = (value / maxValue).clamp(0.0, 1.0);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: HermesTheme.surfaceOverlay),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Text(
-                '${value.toStringAsFixed(1)}$unit',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+              const Spacer(),
+              Text('${value.toStringAsFixed(1)} $unit', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percentage,
-              backgroundColor: HermesTheme.surfaceElevated,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 8,
-            ),
+            child: LinearProgressIndicator(value: pct, backgroundColor: HermesTheme.surfaceOverlay, color: color, minHeight: 8),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           SizedBox(
             height: 40,
-            child: CustomPaint(
-              size: const Size(double.infinity, 40),
-              painter: _SparklinePainter(
-                data: history,
-                color: color,
-              ),
-            ),
+            child: history.length < 2 ? const SizedBox.shrink() : CustomPaint(size: Size.infinite, painter: _SparklinePainter(history: history, color: color)),
           ),
         ],
       ),
@@ -440,473 +473,32 @@ class _ResourceCard extends StatelessWidget {
 }
 
 class _SparklinePainter extends CustomPainter {
-  final List<double> data;
+  final List<double> history;
   final Color color;
 
-  _SparklinePainter({required this.data, required this.color});
+  _SparklinePainter({required this.history, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (data.isEmpty) return;
-
-    final maxVal = data.reduce((a, b) => a > b ? a : b);
-    final minVal = data.reduce((a, b) => a < b ? a : b);
+    final maxVal = history.reduce((a, b) => a > b ? a : b);
+    final minVal = history.reduce((a, b) => a < b ? a : b);
     final range = maxVal - minVal;
 
     final paint = Paint()
-      ..color = color.withOpacity(0.5)
-      ..strokeWidth = 2
+      ..color = color.withOpacity(0.6)
+      ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          color.withOpacity(0.3),
-          color.withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
     final path = Path();
-    final fillPath = Path();
-    
-    for (int i = 0; i < data.length; i++) {
-      final x = (i / (data.length - 1)) * size.width;
-      final y = size.height - ((data[i] - minVal) / range) * size.height;
-      
-      if (i == 0) {
-        path.moveTo(x, y);
-        fillPath.moveTo(x, size.height);
-        fillPath.lineTo(x, y);
-      } else {
-        path.lineTo(x, y);
-        fillPath.lineTo(x, y);
-      }
+    for (int i = 0; i < history.length; i++) {
+      final x = (i / (history.length - 1)) * size.width;
+      final y = range > 0 ? size.height - ((history[i] - minVal) / range * size.height) : size.height / 2;
+      if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
     }
-    
-    fillPath.lineTo(size.width, size.height);
-    fillPath.close();
-    
-    canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-class _ConnectionsCard extends StatelessWidget {
-  final int connections;
-
-  const _ConnectionsCard({required this.connections});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: HermesTheme.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Active Connections',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: HermesTheme.primaryBlue.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$connections active',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: HermesTheme.primaryBlue,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _ConnectionRow(
-            name: 'P2P DataChannel',
-            type: 'WebRTC',
-            status: 'Connected',
-            latency: '25ms',
-            isActive: true,
-          ),
-          const SizedBox(height: 8),
-          _ConnectionRow(
-            name: 'STUN Server',
-            type: 'STUN',
-            status: 'Active',
-            latency: '15ms',
-            isActive: true,
-          ),
-          const SizedBox(height: 8),
-          _ConnectionRow(
-            name: 'Gateway',
-            type: 'HTTPS',
-            status: 'Online',
-            latency: '45ms',
-            isActive: connections > 2,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ConnectionRow extends StatelessWidget {
-  final String name;
-  final String type;
-  final String status;
-  final String latency;
-  final bool isActive;
-
-  const _ConnectionRow({
-    required this.name,
-    required this.type,
-    required this.status,
-    required this.latency,
-    required this.isActive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: HermesTheme.surfaceElevated,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive ? HermesTheme.successGreen : HermesTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  type,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: HermesTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            status,
-            style: TextStyle(
-              fontSize: 12,
-              color: isActive ? HermesTheme.successGreen : HermesTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            latency,
-            style: const TextStyle(
-              fontSize: 12,
-              color: HermesTheme.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LatencyCard extends StatelessWidget {
-  final double latency;
-
-  const _LatencyCard({required this.latency});
-
-  @override
-  Widget build(BuildContext context) {
-    Color latencyColor;
-    String latencyStatus;
-    
-    if (latency < 30) {
-      latencyColor = HermesTheme.successGreen;
-      latencyStatus = 'Excellent';
-    } else if (latency < 60) {
-      latencyColor = HermesTheme.warningAmber;
-      latencyStatus = 'Good';
-    } else {
-      latencyColor = HermesTheme.errorRed;
-      latencyStatus = 'Poor';
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: HermesTheme.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: latencyColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.speed,
-              color: latencyColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Average Latency',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: HermesTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${latency.toStringAsFixed(0)} ms',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: latencyColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: latencyColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              latencyStatus,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: latencyColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SystemInfoCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: HermesTheme.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'System Information',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _InfoRow(label: 'Platform', value: 'Android 14'),
-          const SizedBox(height: 8),
-          _InfoRow(label: 'Flutter', value: '3.19.0'),
-          const SizedBox(height: 8),
-          _InfoRow(label: 'App Version', value: '1.0.0'),
-          const SizedBox(height: 8),
-          _InfoRow(label: 'Uptime', value: '4h 32m'),
-          const SizedBox(height: 8),
-          _InfoRow(label: 'Region', value: 'US-West'),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: HermesTheme.textSecondary,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Alert Settings Sheet
-class _AlertSettingsSheet extends StatefulWidget {
-  const _AlertSettingsSheet();
-
-  @override
-  State<_AlertSettingsSheet> createState() => _AlertSettingsSheetState();
-}
-
-class _AlertSettingsSheetState extends State<_AlertSettingsSheet> {
-  bool _cpuAlert = true;
-  double _cpuThreshold = 80;
-  bool _memoryAlert = true;
-  double _memoryThreshold = 90;
-  bool _latencyAlert = true;
-  double _latencyThreshold = 100;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: HermesTheme.surfaceOverlay,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Performance Alerts',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('CPU Alert', style: TextStyle(color: Colors.white)),
-              subtitle: Text(
-                'Alert when CPU > ${_cpuThreshold.toInt()}%',
-                style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary),
-              ),
-              value: _cpuAlert,
-              onChanged: (value) => setState(() => _cpuAlert = value),
-            ),
-            if (_cpuAlert)
-              Slider(
-                value: _cpuThreshold,
-                min: 50,
-                max: 100,
-                divisions: 10,
-                label: '${_cpuThreshold.toInt()}%',
-                onChanged: (value) => setState(() => _cpuThreshold = value),
-              ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Memory Alert', style: TextStyle(color: Colors.white)),
-              subtitle: Text(
-                'Alert when Memory > ${_memoryThreshold.toInt()}%',
-                style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary),
-              ),
-              value: _memoryAlert,
-              onChanged: (value) => setState(() => _memoryAlert = value),
-            ),
-            if (_memoryAlert)
-              Slider(
-                value: _memoryThreshold,
-                min: 50,
-                max: 100,
-                divisions: 10,
-                label: '${_memoryThreshold.toInt()}%',
-                onChanged: (value) => setState(() => _memoryThreshold = value),
-              ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Latency Alert', style: TextStyle(color: Colors.white)),
-              subtitle: Text(
-                'Alert when Latency > ${_latencyThreshold.toInt()}ms',
-                style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary),
-              ),
-              value: _latencyAlert,
-              onChanged: (value) => setState(() => _latencyAlert = value),
-            ),
-            if (_latencyAlert)
-              Slider(
-                value: _latencyThreshold,
-                min: 50,
-                max: 200,
-                divisions: 15,
-                label: '${_latencyThreshold.toInt()}ms',
-                onChanged: (value) => setState(() => _latencyThreshold = value),
-              ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
+  bool shouldRepaint(covariant _SparklinePainter old) => old.history != history;
 }

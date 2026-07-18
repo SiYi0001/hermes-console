@@ -388,3 +388,63 @@ class AppNotification {
         read: false,
       );
 }
+
+/// Agent / user identity profile
+class AgentProfile {
+  final String id;
+  final String name;
+  final String email;
+  final String membership; // e.g. 'Pro Member', 'Standard'
+  final int sessions;
+  final int commands;
+  final int skills;
+  final int apiCalls;
+  final int storageMb;
+  final int bandwidthGb;
+  final int storageMaxMb;
+  final int bandwidthMaxGb;
+
+  const AgentProfile({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.membership,
+    required this.sessions,
+    required this.commands,
+    required this.skills,
+    required this.apiCalls,
+    required this.storageMb,
+    required this.bandwidthGb,
+    required this.storageMaxMb,
+    required this.bandwidthMaxGb,
+  });
+
+  AgentProfile copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? membership,
+    int? sessions,
+    int? commands,
+    int? skills,
+    int? apiCalls,
+    int? storageMb,
+    int? bandwidthGb,
+    int? storageMaxMb,
+    int? bandwidthMaxGb,
+  }) =>
+      AgentProfile(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        email: email ?? this.email,
+        membership: membership ?? this.membership,
+        sessions: sessions ?? this.sessions,
+        commands: commands ?? this.commands,
+        skills: skills ?? this.skills,
+        apiCalls: apiCalls ?? this.apiCalls,
+        storageMb: storageMb ?? this.storageMb,
+        bandwidthGb: bandwidthGb ?? this.bandwidthGb,
+        storageMaxMb: storageMaxMb ?? this.storageMaxMb,
+        bandwidthMaxGb: bandwidthMaxGb ?? this.bandwidthMaxGb,
+      );
+}
