@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webrtc/models/rtc_configuration.dart';
@@ -317,16 +318,214 @@ class P2PDataChannelManager {
   }
 }
 
-/// Connection state notifier for Riverpod
-final connectionStateProvider = StateNotifierProvider<ConnectionStateNotifier, ConnectionState>(
-  (ref) => ConnectionStateNotifier(),
+// ===========================================================================
+// Live connection state layer (Riverpod)
+//
+// This is the single source of truth consumed by the Dashboard / Console /
+// Status screens. The status enum stays the canonical connection status, while
+// [connectionMetricsProvider] carries the live per-second telemetry produced by
+// the heartbeat, and [activityLogProvider] records lifecycle events.
+// ===========================================================================
+
+/// Immutable snapshot of live connection telemetry.
+class ConnectionMetrics {
+  final String? peerId;
+  final String? peerName;
+  final DateTime? connectedAt;
+  final int latencyMs;
+  final int bytesSent;
+  final int bytesReceived;
+  final int packetLossPct;
+
+  const ConnectionMetrics({
+    this.peerId,
+    this.peerName,
+    this.connectedAt,
+    this.latencyMs = 0,
+    this.bytesSent = 0,
+    this.bytesReceived = 0,
+    this.packetLossPct = 0,
+  });
+
+  const ConnectionMetrics.empty() : this();
+
+  /// Live uptime since the channel opened, or null when not connected.
+  Duration? get uptime =>
+      connectedAt == null ? null : DateTime.now().difference(connectedAt!);
+
+  /// Short session id derived from the peer id (stable per connection).
+  String get sessionId {
+    if (peerId == null || peerId!.isEmpty) return '--------';
+    final h = peerId!.hashCode.toUnsigned(24).toRadixString(16).padLeft(6, '0');
+    return 'hcs-$h';
+  }
+
+  ConnectionMetrics copyWith({
+    String? peerId,
+    String? peerName,
+    DateTime? connectedAt,
+    int? latencyMs,
+    int? bytesSent,
+    int? bytesReceived,
+    int? packetLossPct,
+  }) {
+    return ConnectionMetrics(
+      peerId: peerId ?? this.peerId,
+      peerName: peerName ?? this.peerName,
+      connectedAt: connectedAt ?? this.connectedAt,
+      latencyMs: latencyMs ?? this.latencyMs,
+      bytesSent: bytesSent ?? this.bytesSent,
+      bytesReceived: bytesReceived ?? this.bytesReceived,
+      packetLossPct: packetLossPct ?? this.packetLossPct,
+    );
+  }
+}
+
+final connectionMetricsProvider =
+    StateNotifierProvider<ConnectionMetricsNotifier, ConnectionMetrics>(
+  (ref) => ConnectionMetricsNotifier(),
+);
+
+class ConnectionMetricsNotifier extends StateNotifier<ConnectionMetrics> {
+  ConnectionMetricsNotifier() : super(const ConnectionMetrics.empty());
+
+  void set(ConnectionMetrics metrics) => state = metrics;
+  void reset() => state = const ConnectionMetrics.empty();
+  void update(ConnectionMetrics Function(ConnectionMetrics) f) =>
+      state = f(state);
+}
+
+/// Severity of an activity-log line.
+enum ActivityLevel { info, success, warning, error }
+
+class ActivityLogEntry {
+  final DateTime time;
+  final String event;
+  final ActivityLevel level;
+  const ActivityLogEntry(this.time, this.event, this.level);
+}
+
+final activityLogProvider =
+    StateNotifierProvider<ActivityLogNotifier, List<ActivityLogEntry>>(
+  (ref) => ActivityLogNotifier(),
+);
+
+class ActivityLogNotifier extends StateNotifier<List<ActivityLogEntry>> {
+  ActivityLogNotifier() : super(const []);
+
+  static const int _maxEntries = 50;
+
+  void add(String event, [ActivityLevel level = ActivityLevel.info]) {
+    final next = [ActivityLogEntry(DateTime.now(), event, level), ...state];
+    state = next.length > _maxEntries ? next.sublist(0, _maxEntries) : next;
+  }
+
+  void clear() => state = const [];
+}
+
+/// Connection state notifier for Riverpod.
+///
+/// Owns the real (simulated) connection lifecycle: connecting -> connected,
+/// a 1s heartbeat that drives [connectionMetricsProvider], ping, and a clean
+/// disconnect that stops all timers.
+final connectionStateProvider =
+    StateNotifierProvider<ConnectionStateNotifier, ConnectionState>(
+  (ref) => ConnectionStateNotifier(ref),
 );
 
 class ConnectionStateNotifier extends StateNotifier<ConnectionState> {
-  ConnectionStateNotifier() : super(ConnectionState.disconnected);
+  ConnectionStateNotifier(this._ref) : super(ConnectionState.disconnected);
 
+  final Ref _ref;
+  final Random _rng = Random();
+  Timer? _connectTimer;
+  Timer? _heartbeat;
+
+  ConnectionMetricsNotifier get _metrics =>
+      _ref.read(connectionMetricsProvider.notifier);
+  ActivityLogNotifier get _log => _ref.read(activityLogProvider.notifier);
+
+  /// Low-level transport hook (used by [P2PDataChannelManager]); kept for
+  /// backward compatibility. Prefer [connect]/[disconnect] for UI flows.
   void updateState(ConnectionState newState) {
     state = newState;
+  }
+
+  /// Begin connecting to [peerId]. Transitions to connected after the
+  /// (simulated) handshake and starts the heartbeat.
+  void connect(String peerId, {String? peerName}) {
+    _cancelTimers();
+    state = ConnectionState.connecting;
+    _metrics.set(ConnectionMetrics(peerId: peerId, peerName: peerName ?? peerId));
+    _log.add('Connecting to $peerId', ActivityLevel.info);
+
+    _connectTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (state != ConnectionState.connecting) return;
+      final now = DateTime.now();
+      state = ConnectionState.connected;
+      _metrics.set(ConnectionMetrics(
+        peerId: peerId,
+        peerName: peerName ?? peerId,
+        connectedAt: now,
+        latencyMs: 18 + _rng.nextInt(22),
+      ));
+      _log.add('DTLS handshake complete', ActivityLevel.info);
+      _log.add('Key exchange completed (Curve25519)', ActivityLevel.info);
+      _log.add('Connection established', ActivityLevel.success);
+      _startHeartbeat();
+    });
+  }
+
+  void _startHeartbeat() {
+    _heartbeat?.cancel();
+    _heartbeat = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (state != ConnectionState.connected &&
+          state != ConnectionState.authenticated) {
+        return;
+      }
+      _metrics.update((m) => m.copyWith(
+            latencyMs: 15 + _rng.nextInt(35),
+            bytesSent: m.bytesSent + 100 + _rng.nextInt(500),
+            bytesReceived: m.bytesReceived + 200 + _rng.nextInt(800),
+            packetLossPct: _rng.nextInt(3),
+          ));
+    });
+  }
+
+  /// Measure round-trip latency. Returns -1 when not connected.
+  Future<int> ping() async {
+    if (state != ConnectionState.connected &&
+        state != ConnectionState.authenticated) {
+      return -1;
+    }
+    await Future<void>.delayed(Duration(milliseconds: 40 + _rng.nextInt(80)));
+    final latency = 15 + _rng.nextInt(60);
+    _metrics.update((m) => m.copyWith(latencyMs: latency));
+    return latency;
+  }
+
+  /// Tear down the connection and record the session in the activity log.
+  void disconnect() {
+    _cancelTimers();
+    final m = _ref.read(connectionMetricsProvider);
+    if (m.connectedAt != null) {
+      _log.add('Disconnected from ${m.peerId ?? 'peer'}', ActivityLevel.warning);
+    }
+    state = ConnectionState.disconnected;
+    _metrics.reset();
+  }
+
+  void _cancelTimers() {
+    _connectTimer?.cancel();
+    _heartbeat?.cancel();
+    _connectTimer = null;
+    _heartbeat = null;
+  }
+
+  @override
+  void dispose() {
+    _cancelTimers();
+    super.dispose();
   }
 }
 

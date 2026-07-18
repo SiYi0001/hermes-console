@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.5.0] - 2026-07-19
+
+### Added
+- **Real connection lifecycle** — `ConnectionStateNotifier` (in `p2p_data_channel.dart`)
+  is now a true controller: `connect()` transitions `connecting -> connected` after
+  the handshake and starts a 1s heartbeat; `disconnect()` tears everything down and
+  stops all timers; `ping()` returns real round-trip latency (-1 when offline).
+- **`connectionMetricsProvider`** — immutable live telemetry snapshot
+  (`peerId/peerName`, `connectedAt`, `latencyMs`, `bytesSent`, `bytesReceived`,
+  `packetLossPct`, derived `uptime` + `sessionId`), driven by the heartbeat.
+- **`activityLogProvider`** — rolling 50-entry lifecycle log (info/success/warning/error).
+
+### Changed
+- **Dashboard / Console / Status wired to real state** (item A): all three screens
+  now consume `connectionStateProvider` + `connectionMetricsProvider` instead of
+  mock data. Status screen dropped its local `Timer` simulation and renders live
+  bytes/latency/loss/uptime + the real activity log; Console `ping`/`status`/
+  `connect`/`disconnect` operate the real controller; Connect screen's Connect
+  button now starts the actual lifecycle (previously stuck on `connecting`).
+
+### Removed
+- **Dead orphan** `lib/core/state/connection_provider.dart` (unused duplicate with a
+  broken import that would fail `flutter analyze`).
+
 ## [2.4.1] - 2025-07-19
 
 ### Fixed

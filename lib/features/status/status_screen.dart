@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/p2p_data_channel.dart';
@@ -12,42 +11,13 @@ class StatusScreen extends ConsumerStatefulWidget {
 }
 
 class _StatusScreenState extends ConsumerState<StatusScreen> {
-  int _bytesSent = 0;
-  int _bytesReceived = 0;
-  double _latency = 0;
-  int _packetLoss = 0;
-  Timer? _statsTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _startStatsSimulation();
-  }
-
-  @override
-  void dispose() {
-    _statsTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startStatsSimulation() {
-    _statsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      setState(() {
-        _bytesSent += (100 + (DateTime.now().millisecondsSinceEpoch % 500));
-        _bytesReceived += (200 + (DateTime.now().millisecondsSinceEpoch % 800));
-        _latency = 15 + (DateTime.now().millisecondsSinceEpoch % 30).toDouble();
-        _packetLoss = (DateTime.now().millisecondsSinceEpoch % 3);
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final connectionState = ref.watch(connectionStateProvider);
+    final metrics = ref.watch(connectionMetricsProvider);
+    final activity = ref.watch(activityLogProvider);
+    final connected = connectionState == ConnectionState.connected ||
+        connectionState == ConnectionState.authenticated;
 
     return Scaffold(
       backgroundColor: HermesTheme.backgroundBlack,
@@ -56,8 +26,9 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
         title: const Text('Status'),
         actions: [
           IconButton(
-            onPressed: _refreshStats,
+            onPressed: connected ? _pingNow : null,
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Ping',
           ),
         ],
       ),
@@ -67,7 +38,7 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Connection Overview Card
-            _ConnectionOverviewCard(state: connectionState),
+            _ConnectionOverviewCard(state: connectionState, metrics: metrics),
             const SizedBox(height: 16),
 
             // Real-time Stats
@@ -86,7 +57,7 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
                   child: _StatCard(
                     icon: Icons.upload_rounded,
                     label: 'Sent',
-                    value: _formatBytes(_bytesSent),
+                    value: _formatBytes(metrics.bytesSent),
                     color: HermesTheme.primaryBlue,
                   ),
                 ),
@@ -95,7 +66,7 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
                   child: _StatCard(
                     icon: Icons.download_rounded,
                     label: 'Received',
-                    value: _formatBytes(_bytesReceived),
+                    value: _formatBytes(metrics.bytesReceived),
                     color: HermesTheme.successGreen,
                   ),
                 ),
@@ -108,7 +79,7 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
                   child: _StatCard(
                     icon: Icons.speed_rounded,
                     label: 'Latency',
-                    value: '${_latency.toStringAsFixed(1)}ms',
+                    value: connected ? '${metrics.latencyMs}ms' : '--',
                     color: HermesTheme.warningAmber,
                   ),
                 ),
@@ -117,8 +88,10 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
                   child: _StatCard(
                     icon: Icons.warning_amber_rounded,
                     label: 'Packet Loss',
-                    value: '${_packetLoss}%',
-                    color: _packetLoss > 1 ? HermesTheme.errorRed : HermesTheme.textSecondary,
+                    value: connected ? '${metrics.packetLossPct}%' : '--',
+                    color: metrics.packetLossPct > 1
+                        ? HermesTheme.errorRed
+                        : HermesTheme.textSecondary,
                   ),
                 ),
               ],
@@ -161,18 +134,22 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            _ActivityLogCard(),
+            _ActivityLogCard(entries: activity),
           ],
         ),
       ),
     );
   }
 
-  void _refreshStats() {
-    setState(() {
-      _bytesSent = 0;
-      _bytesReceived = 0;
-    });
+  Future<void> _pingNow() async {
+    final latency = await ref.read(connectionStateProvider.notifier).ping();
+    if (!mounted || latency < 0) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Ping: ${latency}ms'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   String _formatBytes(int bytes) {
@@ -187,8 +164,19 @@ class _StatusScreenState extends ConsumerState<StatusScreen> {
 
 class _ConnectionOverviewCard extends StatelessWidget {
   final ConnectionState state;
+  final ConnectionMetrics metrics;
 
-  const _ConnectionOverviewCard({required this.state});
+  const _ConnectionOverviewCard({required this.state, required this.metrics});
+
+  String _formatUptime(Duration? d) {
+    if (d == null) return '--';
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    if (h > 0) return '${h}h ${m}m';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -263,8 +251,9 @@ class _ConnectionOverviewCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      state == ConnectionState.connected
-                          ? 'Peer: hermes-agent-001'
+                      (state == ConnectionState.connected ||
+                              state == ConnectionState.authenticated)
+                          ? 'Peer: ${metrics.peerName ?? metrics.peerId ?? 'unknown'}'
                           : 'No active connection',
                       style: const TextStyle(
                         fontSize: 13,
@@ -284,9 +273,9 @@ class _ConnectionOverviewCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _MiniStat(label: 'Session ID', value: 'hcs-7f8a2b'),
-                _MiniStat(label: 'Uptime', value: '2h 34m'),
-                _MiniStat(label: 'Protocol', value: 'v1.0'),
+                _MiniStat(label: 'Session ID', value: metrics.sessionId),
+                _MiniStat(label: 'Uptime', value: _formatUptime(metrics.uptime)),
+                const _MiniStat(label: 'Protocol', value: 'v1.0'),
               ],
             ),
           ],
@@ -595,6 +584,28 @@ class _IceCandidateRow extends StatelessWidget {
 }
 
 class _ActivityLogCard extends StatelessWidget {
+  final List<ActivityLogEntry> entries;
+
+  const _ActivityLogCard({required this.entries});
+
+  static String _fmtTime(DateTime t) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
+  }
+
+  static LogType _mapLevel(ActivityLevel level) {
+    switch (level) {
+      case ActivityLevel.success:
+        return LogType.success;
+      case ActivityLevel.warning:
+        return LogType.warning;
+      case ActivityLevel.error:
+        return LogType.error;
+      case ActivityLevel.info:
+        return LogType.info;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -603,39 +614,29 @@ class _ActivityLogCard extends StatelessWidget {
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          _LogEntry(
-            time: '14:32:01',
-            event: 'Connection established',
-            type: LogType.success,
-          ),
-          const SizedBox(height: 8),
-          _LogEntry(
-            time: '14:32:00',
-            event: 'ICE gathering complete',
-            type: LogType.info,
-          ),
-          const SizedBox(height: 8),
-          _LogEntry(
-            time: '14:31:58',
-            event: 'Authentication successful',
-            type: LogType.success,
-          ),
-          const SizedBox(height: 8),
-          _LogEntry(
-            time: '14:31:55',
-            event: 'Key exchange completed',
-            type: LogType.info,
-          ),
-          const SizedBox(height: 8),
-          _LogEntry(
-            time: '14:31:50',
-            event: 'DTLS handshake complete',
-            type: LogType.info,
-          ),
-        ],
-      ),
+      child: entries.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No activity yet. Connect to a peer to see events.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: HermesTheme.textSecondary,
+                ),
+              ),
+            )
+          : Column(
+              children: [
+                for (var i = 0; i < entries.length && i < 12; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  _LogEntry(
+                    time: _fmtTime(entries[i].time),
+                    event: entries[i].event,
+                    type: _mapLevel(entries[i].level),
+                  ),
+                ],
+              ],
+            ),
     );
   }
 }

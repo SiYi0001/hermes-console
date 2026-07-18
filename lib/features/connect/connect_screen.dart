@@ -41,8 +41,6 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
 
   @override
   Widget build(BuildContext context) {
-    final connectionState = ref.watch(connectionStateProvider);
-
     return Scaffold(
       backgroundColor: HermesTheme.backgroundBlack,
       appBar: AppBar(
@@ -465,9 +463,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
     );
     SessionStorage.saveSession(session);
 
-    // Update connection state
-    ref.read(connectionStateProvider.notifier).updateState(
-          ConnectionState.connecting,
+    // Kick off the real connection lifecycle (connecting -> connected + heartbeat)
+    ref.read(connectionStateProvider.notifier).connect(
+          peerId,
+          peerName: session.name,
         );
 
     // Show success

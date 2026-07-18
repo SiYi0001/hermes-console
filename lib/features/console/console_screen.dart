@@ -166,11 +166,66 @@ Available Commands:
 
       case 'status':
         final state = ref.read(connectionStateProvider);
+        final m = ref.read(connectionMetricsProvider);
+        final buffer = StringBuffer(
+            'Connection Status: ${state.name.toUpperCase()}');
+        if (state == ConnectionState.connected ||
+            state == ConnectionState.authenticated) {
+          final up = m.uptime;
+          buffer.write('\n  Peer:       ${m.peerName ?? m.peerId ?? '-'}');
+          buffer.write('\n  Session:    ${m.sessionId}');
+          buffer.write('\n  Latency:    ${m.latencyMs}ms');
+          buffer.write('\n  Sent/Recv:  ${m.bytesSent}B / ${m.bytesReceived}B');
+          buffer.write('\n  Loss:       ${m.packetLossPct}%');
+          if (up != null) {
+            buffer.write('\n  Uptime:     ${up.inSeconds}s');
+          }
+        }
         _entries.add(ConsoleEntry(
           type: ConsoleEntryType.output,
-          content: 'Connection Status: ${state.name.toUpperCase()}',
+          content: buffer.toString(),
           timestamp: DateTime.now(),
         ));
+        break;
+
+      case 'connect':
+        final state = ref.read(connectionStateProvider);
+        if (state == ConnectionState.connected ||
+            state == ConnectionState.connecting ||
+            state == ConnectionState.authenticated) {
+          _entries.add(ConsoleEntry(
+            type: ConsoleEntryType.warning,
+            content: 'Already ${state.name}. Run "disconnect" first.',
+            timestamp: DateTime.now(),
+          ));
+        } else {
+          ref
+              .read(connectionStateProvider.notifier)
+              .connect('console-peer', peerName: 'Console Session');
+          _entries.add(ConsoleEntry(
+            type: ConsoleEntryType.info,
+            content: 'Connecting to console-peer...',
+            timestamp: DateTime.now(),
+          ));
+        }
+        break;
+
+      case 'disconnect':
+        final state = ref.read(connectionStateProvider);
+        if (state == ConnectionState.disconnected) {
+          _entries.add(ConsoleEntry(
+            type: ConsoleEntryType.warning,
+            content: 'Not connected.',
+            timestamp: DateTime.now(),
+          ));
+        } else {
+          ref.read(connectionStateProvider.notifier).disconnect();
+          _entries.add(ConsoleEntry(
+            type: ConsoleEntryType.info,
+            content: 'Disconnected.',
+            timestamp: DateTime.now(),
+          ));
+        }
         break;
 
       case 'info':
@@ -198,14 +253,20 @@ System Information:
           content: 'Pinging...',
           timestamp: DateTime.now(),
         ));
-        Future.delayed(const Duration(milliseconds: 150), () {
+        ref.read(connectionStateProvider.notifier).ping().then((latency) {
+          if (!mounted) return;
           setState(() {
             _entries.add(ConsoleEntry(
-              type: ConsoleEntryType.output,
-              content: 'Pong! Latency: ${(DateTime.now().millisecondsSinceEpoch % 100)}ms',
+              type: latency < 0
+                  ? ConsoleEntryType.error
+                  : ConsoleEntryType.output,
+              content: latency < 0
+                  ? 'Not connected. Run "connect" first.'
+                  : 'Pong! Latency: ${latency}ms',
               timestamp: DateTime.now(),
             ));
           });
+          _scrollToBottom();
         });
         break;
 

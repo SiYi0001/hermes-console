@@ -111,6 +111,7 @@ class HomeTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionState = ref.watch(connectionStateProvider);
+    final metrics = ref.watch(connectionMetricsProvider);
     final sessions = SessionStorage.getAllSessions();
 
     return CustomScrollView(
@@ -195,7 +196,7 @@ class HomeTab extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: _ConnectionStatusCard(state: connectionState),
+            child: _ConnectionStatusCard(state: connectionState, metrics: metrics),
           ),
         ),
 
@@ -281,8 +282,9 @@ class HomeTab extends ConsumerWidget {
 
 class _ConnectionStatusCard extends StatelessWidget {
   final ConnectionState state;
+  final ConnectionMetrics metrics;
 
-  const _ConnectionStatusCard({required this.state});
+  const _ConnectionStatusCard({required this.state, required this.metrics});
 
   @override
   Widget build(BuildContext context) {
@@ -360,9 +362,12 @@ class _ConnectionStatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  state == ConnectionState.connected
-                      ? 'P2P encrypted channel active'
-                      : 'Tap to connect',
+                  (state == ConnectionState.connected ||
+                          state == ConnectionState.authenticated)
+                      ? '${metrics.peerName ?? metrics.peerId ?? 'peer'} · ${metrics.latencyMs}ms'
+                      : state == ConnectionState.connecting
+                          ? 'Establishing P2P channel...'
+                          : 'Tap to connect',
                   style: const TextStyle(
                     fontSize: 13,
                     color: HermesTheme.textSecondary,
