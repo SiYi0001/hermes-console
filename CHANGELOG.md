@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.4.0] - 2025-07-19
+
+### Added
+- **Real settings persistence** (`core/services/settings_service.dart`)
+  - `AppSettings` immutable model with full JSON round-trip
+  - `SettingsNotifier` persists every mutation to Hive synchronously
+  - Riverpod selectors (`themeModeProvider`, `localeCodeProvider`, `onboardingCompleteProvider`) for minimal rebuilds
+- **Onboarding flow** (`features/onboarding/onboarding_screen.dart`)
+  - 4-page first-run intro (P2P / encryption / performance / unified console)
+  - Persists completion flag so it shows only once
+- **Integration tests** (`integration_test/app_test.dart`)
+  - App bootstrap + bottom-navigation contract tests
+- **Settings unit tests** (`test/settings_service_test.dart`)
+  - Serialization, defaults, copyWith, malformed-data fallback
+
+### Repository / Tooling
+- GitHub Pull Request template
+- Dependabot config (pub / github-actions / gradle)
+- Makefile with 25+ dev shortcuts
+- Published to GitHub: https://github.com/SiYi0001/hermes-console
+
 ## [2.1.0] - 2025-07-15
 
 ### Added
