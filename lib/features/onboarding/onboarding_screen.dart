@@ -10,9 +10,12 @@ import '../../shared/theme/hermes_theme.dart';
 /// persists the flag so the flow never appears again. Pure UI + one persisted
 /// write; no mock data.
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key, this.onComplete});
+  const OnboardingScreen({super.key, required this.nextScreenBuilder});
 
-  final VoidCallback? onComplete;
+  /// Builds the screen shown after onboarding completes. The navigation is
+  /// performed from this widget's own context (not a captured parent context)
+  /// to avoid using a deactivated BuildContext after [pushReplacement].
+  final Widget Function(BuildContext) nextScreenBuilder;
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -67,7 +70,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _finish() async {
     await ref.read(settingsProvider.notifier).completeOnboarding();
-    widget.onComplete?.call();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: nextScreenBuilder),
+      );
+    }
   }
 
   void _next() {

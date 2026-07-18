@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.4.1] - 2025-07-19
+
+### Fixed
+- **webRTC package name** — `webRTC` is not a valid Dart package name; the
+  correct dependency is lowercase `webrtc`, keeping the existing
+  `package:webrtc/models/*` import subpaths (the real cause behind the missing
+  `flutter_webrtc`/package-not-found errors).
+- **Settings screen now wired to real state** — removed all mock local state;
+  every toggle writes through `SettingsNotifier` and persists to Hive.
+- **Live dark/light theme** — `HermesConsoleApp` reads `themeModeProvider` so the
+  Dark Mode toggle takes effect immediately (added `lightTheme` variant).
+- **First-run onboarding routing** — `main.dart` now initializes Hive, injects
+  `settingsBoxProvider`, and routes Splash -> Onboarding (first launch) -> Main.
+- **Latent Hive bug** — `HiveInit` now opens the `hermes_key_store` box before
+  reading the encryption key (previously would throw on real init).
+- **Onboarding navigation context** — `OnboardingScreen` navigates from its own
+  context via `nextScreenBuilder` instead of a captured (now-deactivated)
+  parent `BuildContext`.
+
 ## [2.4.0] - 2025-07-19
 
 ### Added

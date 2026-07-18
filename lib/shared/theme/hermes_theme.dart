@@ -31,6 +31,15 @@ class HermesTheme {
   static const Color statusDisconnected = textSecondary;
   static const Color statusError = errorRed;
 
+  // Light palette (used by the optional light theme)
+  static const Color lightBackground = Color(0xFFF2F2F7);
+  static const Color lightSurface = Color(0xFFFFFFFF);
+  static const Color lightSurfaceElevated = Color(0xFFEAEAEF);
+  static const Color lightSurfaceOverlay = Color(0xFFD1D1D6);
+  static const Color lightTextPrimary = Color(0xFF1C1C1E);
+  static const Color lightTextSecondary = Color(0xFF6B6B70);
+  static const Color lightTextTertiary = Color(0xFF8E8E93);
+
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -259,6 +268,110 @@ class HermesTheme {
           fontWeight: FontWeight.w500,
           color: textTertiary,
         ),
+      ),
+    );
+  }
+
+  /// Light theme variant. Most feature screens still paint with the explicit
+  /// dark palette constants, so this currently themes system widgets (AppBar,
+  /// dialogs, inputs, bottom nav). The persisted dark/light preference still
+  /// flows through [themeModeProvider]; a full light-mode reskin of every
+  /// screen is tracked as future work.
+  static ThemeData get lightTheme {
+    return darkTheme.copyWith(
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: lightBackground,
+      colorScheme: const ColorScheme.light(
+        primary: primaryBlue,
+        secondary: secondaryPurple,
+        surface: lightSurface,
+        error: errorRed,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: lightTextPrimary,
+        onError: Colors.white,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: lightSurface,
+        foregroundColor: lightTextPrimary,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: lightTextPrimary,
+        ),
+      ),
+      cardTheme: CardTheme(
+        color: lightSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: lightSurface,
+        selectedItemColor: primaryBlue,
+        unselectedItemColor: lightTextSecondary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: lightSurfaceOverlay,
+        thickness: 0.5,
+        space: 1,
+      ),
+      listTileTheme: const ListTileThemeData(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+        tileColor: Colors.transparent,
+        iconColor: lightTextSecondary,
+        textColor: lightTextPrimary,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryBlue;
+          }
+          return lightTextSecondary;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryBlue.withOpacity(0.5);
+          }
+          return lightSurfaceElevated;
+        }),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: lightSurfaceElevated,
+        hintStyle: const TextStyle(
+          color: lightTextSecondary,
+          fontSize: 16,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryBlue, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: errorRed, width: 1),
+        ),
+      ),
+      textTheme: darkTheme.textTheme.apply(
+        bodyColor: lightTextPrimary,
+        displayColor: lightTextPrimary,
+        decorationColor: lightTextSecondary,
       ),
     );
   }

@@ -6,14 +6,22 @@ class HiveInit {
   static const String _historyBox = 'history';
   static const String _keysBox = 'keys';
 
+  static const String _keyStoreBox = 'hermes_key_store';
+
   static Future<void> initialize() async {
     await Hive.initFlutter();
-    
+
+    // The encryption-key store must be opened BEFORE _getOrCreateEncryptionKey
+    // is called (it reads/writes into this box). Opening it here guarantees it
+    // exists when the encrypted keysBox is opened below.
+    await Hive.openBox<List<int>>(_keyStoreBox);
+
     // Open boxes
     await Hive.openBox(_settingsBox);
     await Hive.openBox(_sessionsBox);
     await Hive.openBox(_historyBox);
-    await Hive.openBox(_keysBox, encryptionCipher: HiveAesCipher(_getOrCreateEncryptionKey()));
+    await Hive.openBox(_keysBox,
+        encryptionCipher: HiveAesCipher(_getOrCreateEncryptionKey()));
   }
 
   static Box get settingsBox => Hive.box(_settingsBox);

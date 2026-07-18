@@ -1,38 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/services/settings_service.dart';
 import '../../core/storage/hive_init.dart';
 import '../../shared/theme/hermes_theme.dart';
 
-class SettingsScreen extends ConsumerStatefulWidget {
+/// Settings screen.
+///
+/// Fully backed by [settingsProvider]: every toggle writes through
+/// [SettingsNotifier] and is persisted to Hive immediately, so changes
+/// survive app restarts. Dark-mode changes also flow to the app theme via
+/// [themeModeProvider] consumed in [HermesConsoleApp].
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _encryptionEnabled = true;
-  bool _compressionEnabled = true;
-  bool _autoReconnect = true;
-  int _connectionTimeout = 30;
+  static const String appVersion = '2.4.0';
 
   @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(settingsProvider);
 
-  void _loadSettings() {
-    setState(() {
-      _encryptionEnabled = SettingsStorage.encryptionEnabled;
-      _compressionEnabled = SettingsStorage.compressionEnabled;
-      _autoReconnect = SettingsStorage.autoReconnect;
-      _connectionTimeout = SettingsStorage.connectionTimeout;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HermesTheme.backgroundBlack,
       appBar: AppBar(
@@ -53,29 +40,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   icon: Icons.lock_rounded,
                   title: 'End-to-End Encryption',
                   subtitle: 'AES-256-GCM encryption for all data',
-                  value: _encryptionEnabled,
-                  onChanged: (value) async {
-                    await SettingsStorage.setEncryptionEnabled(value);
-                    setState(() => _encryptionEnabled = value);
-                  },
+                  value: s.enableEncryption,
+                  onChanged: (value) =>
+                      ref.read(settingsProvider.notifier).setEncryption(value),
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
                 _SwitchTile(
                   icon: Icons.sync_alt_rounded,
                   title: 'Auto Reconnect',
                   subtitle: 'Automatically reconnect on disconnect',
-                  value: _autoReconnect,
-                  onChanged: (value) async {
-                    await SettingsStorage.setAutoReconnect(value);
-                    setState(() => _autoReconnect = value);
-                  },
+                  value: s.autoReconnect,
+                  onChanged: (value) =>
+                      ref.read(settingsProvider.notifier).setAutoReconnect(value),
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
                 _ActionTile(
                   icon: Icons.timer_outlined,
                   title: 'Connection Timeout',
-                  subtitle: '$_connectionTimeout seconds',
-                  onTap: _showTimeoutPicker,
+                  subtitle: '${s.connectionTimeoutSeconds} seconds',
+                  onTap: () => _showTimeoutPicker(context, ref, s.connectionTimeoutSeconds),
                 ),
               ],
             ),
@@ -89,15 +72,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _ActionTile(
                   icon: Icons.dns_rounded,
                   title: 'STUN Servers',
-                  subtitle: '${SettingsStorage.stunServers.length} configured',
-                  onTap: _showStunServers,
+                  subtitle: '${s.stunServers.length} configured',
+                  onTap: () => _showServerSheet(
+                    context,
+                    ref,
+                    title: 'STUN Servers',
+                    servers: s.stunServers,
+                    onChanged: (list) =>
+                        ref.read(settingsProvider.notifier).setStunServers(list),
+                  ),
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
                 _ActionTile(
                   icon: Icons.vpn_lock_rounded,
                   title: 'TURN Servers',
-                  subtitle: '${SettingsStorage.turnServers.length} configured',
-                  onTap: _showTurnServers,
+                  subtitle: '${s.turnServers.length} configured',
+                  onTap: () => _showServerSheet(
+                    context,
+                    ref,
+                    title: 'TURN Servers',
+                    servers: s.turnServers,
+                    onChanged: (list) =>
+                        ref.read(settingsProvider.notifier).setTurnServers(list),
+                  ),
                 ),
               ],
             ),
@@ -112,11 +109,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   icon: Icons.compress_rounded,
                   title: 'Data Compression',
                   subtitle: 'Zstandard compression for transfers',
-                  value: _compressionEnabled,
-                  onChanged: (value) async {
-                    await SettingsStorage.setCompressionEnabled(value);
-                    setState(() => _compressionEnabled = value);
-                  },
+                  value: s.enableCompression,
+                  onChanged: (value) =>
+                      ref.read(settingsProvider.notifier).setCompression(value),
                 ),
               ],
             ),
@@ -131,14 +126,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   icon: Icons.shield_rounded,
                   title: 'IP Whitelist',
                   subtitle: 'Only allow connections from whitelist',
-                  value: false,
-                  onChanged: (value) {},
+                  value: s.ipWhitelistEnabled,
+                  onChanged: (value) =>
+                      ref.read(settingsProvider.notifier).setIpWhitelist(value),
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
                 _ActionTile(
                   icon: Icons.format_list_numbered_rounded,
                   title: 'Whitelist Rules',
-                  subtitle: '0 rules configured',
+                  subtitle: s.ipWhitelistEnabled ? '0 rules configured' : 'Disabled',
                   onTap: () {},
                 ),
               ],
@@ -153,17 +149,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _SwitchTile(
                   icon: Icons.dark_mode_rounded,
                   title: 'Dark Mode',
-                  subtitle: 'Always on (recommended)',
-                  value: true,
-                  enabled: false,
-                  onChanged: (value) {},
+                  subtitle: 'Recommended for OLED screens',
+                  value: s.themeMode == ThemeMode.dark,
+                  onChanged: (value) =>
+                      ref.read(settingsProvider.notifier).setDarkMode(value),
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
                 _ActionTile(
                   icon: Icons.text_fields_rounded,
                   title: 'Terminal Font Size',
-                  subtitle: '14px',
-                  onTap: () {},
+                  subtitle: '${s.consoleFontSize.toInt()}px',
+                  onTap: () => _showFontPicker(context, ref, s.consoleFontSize),
                 ),
               ],
             ),
@@ -177,20 +173,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _InfoTile(
                   icon: Icons.info_outline_rounded,
                   title: 'Version',
-                  value: '1.0.0',
+                  value: appVersion,
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
                 _InfoTile(
                   icon: Icons.code_rounded,
                   title: 'Protocol',
-                  value: 'Hermes v1.0.0',
+                  value: 'Hermes v2.0.0',
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
                 _ActionTile(
                   icon: Icons.description_outlined,
                   title: 'Licenses',
                   subtitle: 'Open source licenses',
-                  onTap: () => _showLicenses(),
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: 'HermesConsole',
+                    applicationVersion: appVersion,
+                    applicationIcon: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: HermesTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.terminal_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -206,7 +218,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: 'Clear All Data',
                   subtitle: 'Remove all sessions and settings',
                   isDestructive: true,
-                  onTap: _confirmClearData,
+                  onTap: () => _confirmClearData(context, ref),
                 ),
               ],
             ),
@@ -217,7 +229,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showTimeoutPicker() {
+  void _showTimeoutPicker(
+    BuildContext context,
+    WidgetRef ref,
+    int currentValue,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: HermesTheme.surfaceDark,
@@ -225,17 +241,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _TimeoutPickerSheet(
-        currentValue: _connectionTimeout,
-        onChanged: (value) async {
-          await SettingsStorage.setConnectionTimeout(value);
-          setState(() => _connectionTimeout = value);
-          if (mounted) Navigator.pop(context);
+        currentValue: currentValue,
+        options: const [10, 15, 30, 60, 120],
+        onChanged: (value) {
+          ref.read(settingsProvider.notifier).setConnectionTimeout(value);
+          Navigator.pop(context);
         },
       ),
     );
   }
 
-  void _showStunServers() {
+  void _showFontPicker(
+    BuildContext context,
+    WidgetRef ref,
+    double currentValue,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesTheme.surfaceDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _TimeoutPickerSheet(
+        currentValue: currentValue.toInt(),
+        options: const [10, 12, 14, 16, 18, 20],
+        label: 'px',
+        onChanged: (value) {
+          ref.read(settingsProvider.notifier).setConsoleFontSize(value.toDouble());
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  void _showServerSheet(
+    BuildContext context,
+    WidgetRef ref,
+    {
+    required String title,
+    required List<String> servers,
+    required ValueChanged<List<String>> onChanged,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: HermesTheme.surfaceDark,
@@ -244,72 +290,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _ServerListSheet(
-        title: 'STUN Servers',
-        servers: SettingsStorage.stunServers,
-        onAdd: (server) async {
-          final current = SettingsStorage.stunServers;
-          await SettingsStorage.setStunServers([...current, server]);
-          setState(() {});
-        },
-        onRemove: (server) async {
-          final current = SettingsStorage.stunServers;
-          await SettingsStorage.setStunServers(
-            current.where((s) => s != server).toList(),
-          );
-          setState(() {});
+        title: title,
+        servers: servers,
+        onChanged: (list) {
+          onChanged(list);
         },
       ),
     );
   }
 
-  void _showTurnServers() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: HermesTheme.surfaceDark,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => _ServerListSheet(
-        title: 'TURN Servers',
-        servers: SettingsStorage.turnServers,
-        onAdd: (server) async {
-          final current = SettingsStorage.turnServers;
-          await SettingsStorage.setTurnServers([...current, server]);
-          setState(() {});
-        },
-        onRemove: (server) async {
-          final current = SettingsStorage.turnServers;
-          await SettingsStorage.setTurnServers(
-            current.where((s) => s != server).toList(),
-          );
-          setState(() {});
-        },
-      ),
-    );
-  }
-
-  void _showLicenses() {
-    showLicensePage(
-      context: context,
-      applicationName: 'HermesConsole',
-      applicationVersion: '1.0.0',
-      applicationIcon: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: HermesTheme.primaryGradient,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(
-          Icons.terminal_rounded,
-          color: Colors.white,
-          size: 32,
-        ),
-      ),
-    );
-  }
-
-  void _confirmClearData() {
+  void _confirmClearData(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -326,7 +316,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           TextButton(
             onPressed: () async {
               await HiveInit.clearAll();
-              if (mounted) {
+              await ref.read(settingsProvider.notifier).resetToDefaults();
+              if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -392,7 +383,6 @@ class _SwitchTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
-  final bool enabled;
   final ValueChanged<bool> onChanged;
 
   const _SwitchTile({
@@ -400,7 +390,6 @@ class _SwitchTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.value,
-    this.enabled = true,
     required this.onChanged,
   });
 
@@ -429,10 +418,10 @@ class _SwitchTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: enabled ? Colors.white : HermesTheme.textSecondary,
+                    color: Colors.white,
                   ),
                 ),
                 Text(
@@ -447,7 +436,7 @@ class _SwitchTile extends StatelessWidget {
           ),
           Switch(
             value: value,
-            onChanged: enabled ? onChanged : null,
+            onChanged: onChanged,
           ),
         ],
       ),
@@ -580,17 +569,19 @@ class _InfoTile extends StatelessWidget {
 
 class _TimeoutPickerSheet extends StatelessWidget {
   final int currentValue;
+  final List<int> options;
+  final String label;
   final ValueChanged<int> onChanged;
 
   const _TimeoutPickerSheet({
     required this.currentValue,
+    required this.options,
+    this.label = 'seconds',
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final options = [10, 15, 30, 60, 120];
-
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -608,21 +599,21 @@ class _TimeoutPickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Connection Timeout',
-            style: TextStyle(
+          Text(
+            label == 'px' ? 'Terminal Font Size' : 'Connection Timeout',
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
           const SizedBox(height: 20),
-          ...options.map((seconds) => RadioListTile<int>(
-            value: seconds,
+          ...options.map((value) => RadioListTile<int>(
+            value: value,
             groupValue: currentValue,
-            onChanged: (value) => onChanged(value!),
+            onChanged: (v) => onChanged(v!),
             title: Text(
-              '$seconds seconds',
+              '$value $label',
               style: const TextStyle(color: Colors.white),
             ),
             activeColor: HermesTheme.primaryBlue,
@@ -637,14 +628,12 @@ class _TimeoutPickerSheet extends StatelessWidget {
 class _ServerListSheet extends StatefulWidget {
   final String title;
   final List<String> servers;
-  final ValueChanged<String> onAdd;
-  final ValueChanged<String> onRemove;
+  final ValueChanged<List<String>> onChanged;
 
   const _ServerListSheet({
     required this.title,
     required this.servers,
-    required this.onAdd,
-    required this.onRemove,
+    required this.onChanged,
   });
 
   @override
@@ -652,12 +641,31 @@ class _ServerListSheet extends StatefulWidget {
 }
 
 class _ServerListSheetState extends State<_ServerListSheet> {
+  late List<String> _servers;
   final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _servers = List<String>.from(widget.servers);
+  }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _add(String server) {
+    if (server.isEmpty) return;
+    setState(() => _servers.add(server));
+    widget.onChanged(List.unmodifiable(_servers));
+    _controller.clear();
+  }
+
+  void _remove(String server) {
+    setState(() => _servers.remove(server));
+    widget.onChanged(List.unmodifiable(_servers));
   }
 
   @override
@@ -712,16 +720,12 @@ class _ServerListSheetState extends State<_ServerListSheet> {
                     isDense: true,
                   ),
                   style: const TextStyle(color: Colors.white),
+                  onSubmitted: _add,
                 ),
               ),
               const SizedBox(width: 12),
               ElevatedButton(
-                onPressed: () {
-                  if (_controller.text.isNotEmpty) {
-                    widget.onAdd(_controller.text);
-                    _controller.clear();
-                  }
-                },
+                onPressed: () => _add(_controller.text),
                 child: const Icon(Icons.add),
               ),
             ],
@@ -730,9 +734,9 @@ class _ServerListSheetState extends State<_ServerListSheet> {
           SizedBox(
             height: 200,
             child: ListView.builder(
-              itemCount: widget.servers.length,
+              itemCount: _servers.length,
               itemBuilder: (context, index) {
-                final server = widget.servers[index];
+                final server = _servers[index];
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(
@@ -740,7 +744,7 @@ class _ServerListSheetState extends State<_ServerListSheet> {
                     style: HermesTheme.codeStyle.copyWith(fontSize: 12),
                   ),
                   trailing: IconButton(
-                    onPressed: () => widget.onRemove(server),
+                    onPressed: () => _remove(server),
                     icon: const Icon(
                       Icons.delete_outline,
                       color: HermesTheme.errorRed,

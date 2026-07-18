@@ -33,6 +33,13 @@ class AppSettings {
     this.biometricLock = false,
     this.telemetryEnabled = false,
     this.onboardingComplete = false,
+    this.connectionTimeoutSeconds = 30,
+    this.stunServers = const [
+      'stun:stun.l.google.com:19302',
+      'stun:stun1.l.google.com:19302',
+    ],
+    this.turnServers = const <String>[],
+    this.ipWhitelistEnabled = false,
   });
 
   final ThemeMode themeMode;
@@ -52,6 +59,18 @@ class AppSettings {
   final bool telemetryEnabled;
   final bool onboardingComplete;
 
+  /// Wait at most this long (seconds) for a peer connection to establish.
+  final int connectionTimeoutSeconds;
+
+  /// ICE STUN servers used for NAT traversal.
+  final List<String> stunServers;
+
+  /// ICE TURN servers used as relay fallback.
+  final List<String> turnServers;
+
+  /// When true, only peers on the IP whitelist may connect.
+  final bool ipWhitelistEnabled;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     String? localeCode,
@@ -69,6 +88,10 @@ class AppSettings {
     bool? biometricLock,
     bool? telemetryEnabled,
     bool? onboardingComplete,
+    int? connectionTimeoutSeconds,
+    List<String>? stunServers,
+    List<String>? turnServers,
+    bool? ipWhitelistEnabled,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -87,6 +110,11 @@ class AppSettings {
       biometricLock: biometricLock ?? this.biometricLock,
       telemetryEnabled: telemetryEnabled ?? this.telemetryEnabled,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      connectionTimeoutSeconds:
+          connectionTimeoutSeconds ?? this.connectionTimeoutSeconds,
+      stunServers: stunServers ?? this.stunServers,
+      turnServers: turnServers ?? this.turnServers,
+      ipWhitelistEnabled: ipWhitelistEnabled ?? this.ipWhitelistEnabled,
     );
   }
 
@@ -107,6 +135,10 @@ class AppSettings {
         'biometricLock': biometricLock,
         'telemetryEnabled': telemetryEnabled,
         'onboardingComplete': onboardingComplete,
+        'connectionTimeoutSeconds': connectionTimeoutSeconds,
+        'stunServers': stunServers,
+        'turnServers': turnServers,
+        'ipWhitelistEnabled': ipWhitelistEnabled,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -127,6 +159,14 @@ class AppSettings {
       biometricLock: json['biometricLock'] as bool? ?? false,
       telemetryEnabled: json['telemetryEnabled'] as bool? ?? false,
       onboardingComplete: json['onboardingComplete'] as bool? ?? false,
+      connectionTimeoutSeconds: json['connectionTimeoutSeconds'] as int? ?? 30,
+      stunServers: _asStringList(json['stunServers']) ??
+          const [
+            'stun:stun.l.google.com:19302',
+            'stun:stun1.l.google.com:19302',
+          ],
+      turnServers: _asStringList(json['turnServers']) ?? const <String>[],
+      ipWhitelistEnabled: json['ipWhitelistEnabled'] as bool? ?? false,
     );
   }
 }
@@ -205,7 +245,30 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> completeOnboarding() =>
       _persist(state.copyWith(onboardingComplete: true));
 
+  Future<void> setConnectionTimeout(int seconds) =>
+      _persist(state.copyWith(connectionTimeoutSeconds: seconds.clamp(5, 300)));
+
+  Future<void> setStunServers(List<String> servers) =>
+      _persist(state.copyWith(stunServers: List.unmodifiable(servers)));
+
+  Future<void> setTurnServers(List<String> servers) =>
+      _persist(state.copyWith(turnServers: List.unmodifiable(servers)));
+
+  Future<void> setIpWhitelist(bool enabled) =>
+      _persist(state.copyWith(ipWhitelistEnabled: enabled));
+
+  Future<void> setDarkMode(bool dark) => _persist(
+      state.copyWith(themeMode: dark ? ThemeMode.dark : ThemeMode.light));
+
   Future<void> resetToDefaults() => _persist(const AppSettings());
+}
+
+/// Helper: safely coerce a dynamic JSON value into a list of strings.
+List<String>? _asStringList(dynamic value) {
+  if (value is List) {
+    return value.whereType<String>().toList();
+  }
+  return null;
 }
 
 /// Injected at app bootstrap with the opened Hive box.
