@@ -1,0 +1,86 @@
+# Default issue labels for HermesConsole
+
+labels:
+  # Issue type
+  - name: bug
+    color: d73a4a
+    description: Something isn't working
+  - name: enhancement
+    color: a155d9
+    description: New feature or request
+  - name: documentation
+    color: 0075ca
+    description: Improvements to documentation
+  - name: question
+    color: d876e3
+    description: Further information is requested
+
+  # Priority
+  - name: priority:critical
+    color: b60205
+    description: Critical issue requiring immediate attention
+  - name: priority:high
+    color: d93f0b
+    description: High priority issue
+  - name: priority:medium
+    color: fbca04
+    description: Medium priority issue
+  - name: priority:low
+    color: 0e8a16
+    description: Low priority issue
+
+  # Area
+  - name: area:security
+    color: ee0701
+    description: Security-related issues
+  - name: area:performance
+    color: fx-32u5
+    description: Performance-related issues
+  - name: area:ui
+    color: d4c72f
+    description: UI/UX related issues
+  - name: area:network
+    color: 0366d6
+    description: Network/P2P related issues
+  - name: area:crypto
+    color: 5319e7
+    description: Encryption/Cryptography issues
+
+  # Status
+  - name: needs-triage
+    color: fef2c0
+    description: Issue needs initial triage
+  - name: needs-reproduction
+    color: cdf5e0
+    description: Issue needs reproduction steps
+  - name: needs-fix
+    color: e6d1f3
+    description: Issue confirmed, needs fix
+  - name: good-first-issue
+    color: 7057ff
+    description: Good for newcomers
+  - name: help-wanted
+    color: 008672
+    description: Extra attention is needed
+
+  # Platform
+  - name: platform:android
+    color: 32a67a
+    description: Android-specific issue
+  - name: platform:ios
+    color: b7cedb
+    description: iOS-specific issue
+  - name: platform:web
+    color: 84b6eb
+    description: Web-specific issue
+  - name: platform:desktop
+    color: f9a979
+    description: Desktop-specific issue
+
+  # Technical
+  - name: breaking-change
+    color: e55028
+    description: Breaking API or behavior change
+  - name: dependencies
+    color: 0366d6
+    description: Updates to dependencies
