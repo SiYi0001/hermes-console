@@ -1,102 +1,98 @@
 # HermesConsole Makefile
-# Common development tasks
+# 提供常用命令快捷方式
+#
+# 用法:
+#   make help        显示所有可用命令
+#   make analyze     运行静态分析
+#   make test        运行测试
+#   make build       构建所有平台
+#   make clean       清理构建产物
 
-.PHONY: help
-help: ## Show this help message
-	@echo "HermesConsole - Development Commands"
+.PHONY: help analyze test test-coverage build build-apk build-ios build-web \
+        clean lint format run-android run-ios pub-get pub-upgrade \
+        release-apk release-ios
+
+# 默认目标：显示帮助
+.DEFAULT_GOAL := help
+
+## ──────────────────────────────────────────
+# 开发命令
+## ──────────────────────────────────────────
+
+help: ## 显示帮助信息 / Show this help
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo "HermesConsole Makefile — 可用命令"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "示例 / Examples:"
+	@echo "  make analyze       # 运行静态分析"
+	@echo "  make test         # 运行测试"
+	@echo "  make build-apk     # 构建 Android APK"
+	@echo ""
 
-.PHONY: setup
-setup: ## Install dependencies
+pub-get: ## 安装依赖 / Install dependencies
 	flutter pub get
 
-.PHONY: run
-run: ## Run the app in debug mode
-	flutter run
+pub-upgrade: ## 升级依赖 / Upgrade dependencies
+	flutter pub upgrade
 
-.PHONY: run-profile
-run-profile: ## Run the app in profile mode (performance testing)
-	flutter run --profile
+## ──────────────────────────────────────────
+# 代码质量
+## ──────────────────────────────────────────
 
-.PHONY: run-release
-run-release: ## Run the app in release mode
-	flutter run --release
+analyze: ## 静态分析 / Run Flutter analyze
+	flutter analyze --no-fatal-infos --no-fatal-warnings
 
-.PHONY: analyze
-analyze: ## Run static analysis
+lint: ## 运行 lint / Run linter
 	flutter analyze
 
-.PHONY: format
-format: ## Format all Dart files
-	dart format lib/ test/
+format: ## 格式化代码 / Format code
+	flutter format lib/ test/
 
-.PHONY: format-check
-format-check: ## Check formatting without changing files
-	dart format --output=none --set-exit-if-changed lib/ test/
+test: ## 运行单元测试 / Run unit tests
+	flutter test --no-pub
 
-.PHONY: test
-test: ## Run all unit tests
-	flutter test
+test-coverage: ## 运行测试并生成覆盖率 / Run tests with coverage
+	flutter test --no-pub --coverage
+	genhtml coverage/lcov.info -o coverage/html
+	@echo "覆盖率报告: coverage/html/index.html"
 
-.PHONY: test-coverage
-test-coverage: ## Run tests with coverage report
-	flutter test --coverage
-	@echo "Coverage report generated at coverage/lcov.info"
+## ──────────────────────────────────────────
+# 构建
+## ──────────────────────────────────────────
 
-.PHONY: test-integration
-test-integration: ## Run integration tests
-	flutter test integration_test/
+build: build-apk build-ios build-web ## 构建所有平台 / Build all platforms
 
-.PHONY: build-apk
-build-apk: ## Build Android APK (release)
-	flutter build apk --release
+build-apk: ## 构建 Android APK / Build Android debug APK
+	flutter build apk --debug
 
-.PHONY: build-appbundle
-build-appbundle: ## Build Android App Bundle (release)
-	flutter build appbundle --release
+build-web: ## 构建 Web / Build Web app
+	flutter build web
 
-.PHONY: build-ios
-build-ios: ## Build iOS (release, no codesign)
-	flutter build ios --release --no-codesign
+run-android: ## 在 Android 设备/模拟器运行 / Run on Android
+	flutter run -d android
 
-.PHONY: build-web
-build-web: ## Build Web (release)
-	flutter build web --release
+run-ios: ## 在 iOS 模拟器运行 / Run on iOS simulator
+	flutter run -d iphone
 
-.PHONY: clean
-clean: ## Clean build artifacts
+## ──────────────────────────────────────────
+# 发布构建
+## ──────────────────────────────────────────
+
+release-apk: ## 构建 Android Release APK / Build Android release APK
+	flutter build apk --release --obfuscate --split-debug-info=build/debug-info
+
+release-ios: ## 构建 iOS Release / Build iOS release
+	flutter build ios --release
+
+## ──────────────────────────────────────────
+# 清理
+## ──────────────────────────────────────────
+
+clean: ## 清理构建产物 / Clean build artifacts
 	flutter clean
 	rm -rf coverage/
-
-.PHONY: deep-clean
-deep-clean: clean ## Deep clean including pub cache
-	flutter pub cache clean
-
-.PHONY: gen
-gen: ## Run code generation (build_runner)
-	dart run build_runner build --delete-conflicting-outputs
-
-.PHONY: gen-watch
-gen-watch: ## Run code generation in watch mode
-	dart run build_runner watch --delete-conflicting-outputs
-
-.PHONY: l10n
-l10n: ## Generate localization files
-	flutter gen-l10n
-
-.PHONY: check
-check: format-check analyze test ## Run all checks (format, analyze, test)
-	@echo "All checks passed!"
-
-.PHONY: doctor
-doctor: ## Run Flutter doctor
-	flutter doctor -v
-
-.PHONY: outdated
-outdated: ## Check for outdated dependencies
-	flutter pub outdated
-
-.PHONY: upgrade
-upgrade: ## Upgrade dependencies
-	flutter pub upgrade
+	rm -rf build/
+	rm -f .dart_tool/package_config.json

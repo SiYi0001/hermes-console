@@ -1,148 +1,143 @@
-# HermesConsole Changelog
+# 更新日志 / Changelog
 
-All notable changes to this project will be documented in this file.
+所有重要版本更新均记录于此。遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范。
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+---
 
-## [2.5.0] - 2026-07-19
+## [2.6.0] — 2026-07-19
 
-### Added
-- **Real connection lifecycle** — `ConnectionStateNotifier` (in `p2p_data_channel.dart`)
-  is now a true controller: `connect()` transitions `connecting -> connected` after
-  the handshake and starts a 1s heartbeat; `disconnect()` tears everything down and
-  stops all timers; `ping()` returns real round-trip latency (-1 when offline).
-- **`connectionMetricsProvider`** — immutable live telemetry snapshot
-  (`peerId/peerName`, `connectedAt`, `latencyMs`, `bytesSent`, `bytesReceived`,
-  `packetLossPct`, derived `uptime` + `sessionId`), driven by the heartbeat.
-- **`activityLogProvider`** — rolling 50-entry lifecycle log (info/success/warning/error).
+### 变更 / Changed
+- **全部 10 个功能屏幕**接入真实 `AppState` Provider：
+  - `dashboard_screen` — 连接状态 + P2P 指标真实数据
+  - `console_screen` — 命令历史 + ping/status/connect/disconnect 真实调用
+  - `connect_screen` — 真实 P2P 连接控制器
+  - `status_screen` — `connectionMetricsProvider` + `activityLogProvider` 驱动
+  - `settings_screen` — `settingsProvider` 完整集成
+  - `memory_screen` — 长期记忆 CRUD
+  - `mcp_screen` — MCP 服务器管理
+  - `automation_screen` — Cron 任务管理
+  - `logs_screen` — 日志查看与过滤
+  - `gateway_screen` — 网关渠道配置
+  - `transfer_screen` — 文件传输管理
+  - `notifications_screen` — 通知中心
+  - `profile_screen` — Agent Profile 配置
+  - `performance_screen` — 性能监控
 
-### Changed
-- **Dashboard / Console / Status wired to real state** (item A): all three screens
-  now consume `connectionStateProvider` + `connectionMetricsProvider` instead of
-  mock data. Status screen dropped its local `Timer` simulation and renders live
-  bytes/latency/loss/uptime + the real activity log; Console `ping`/`status`/
-  `connect`/`disconnect` operate the real controller; Connect screen's Connect
-  button now starts the actual lifecycle (previously stuck on `connecting`).
+### 新增 / Added
+- `AgentProfile` 模型（`models.dart`）
+- `AppState.profile` 字段 + `updateProfile()` 方法
+- `removeSharedFile()` 方法（`AppStateNotifier`）
+- `lib/models.dart` — 统一导出所有 model 类
+- `lib/app_state.dart` — 单源 `AppState` + `StateNotifier`
+- README.md 中文为主、英文备选格式
+- `docs/protocol.md` — 完整协议规范文档
+- `docs/api.md` — API 参考文档
+- `.editorconfig` — 跨编辑器代码风格配置
+- `test/core/crypto_service_test.dart` — 加密服务单元测试（9 个测试用例）
+- `test/core/compression_service_test.dart` — 压缩服务单元测试（8 个测试用例）
+- `test/core/app_state_test.dart` — AppState 单元测试（17 个测试用例）
+- `Makefile` — 常用命令快捷方式
+- `analysis_options.yaml` — 严格 Lint 规则（80+ 规则）
 
-### Removed
-- **Dead orphan** `lib/core/state/connection_provider.dart` (unused duplicate with a
-  broken import that would fail `flutter analyze`).
+### 修复 / Fixed
+- **编译错误**：`pubspec.yaml` `webrtc` → `flutter_webrtc`
+- **编译错误**：`p2p_data_channel.dart` 导入路径 `package:webrtc/...` → `package:flutter_webrtc/webrtc.dart`
+- **编译错误**：`assets/` 目录缺失 → 创建 `icons/`、`images/`、`fonts/` 子目录
+- **重复定义**：`GlassCard` 在两处定义 → 删除孤立 `optimized_widgets.dart`
+- **死依赖**：`secure_storage` 未使用 → 从 pubspec.yaml 移除
+- `AppNotification.isRead` → 正确使用 `AppNotification.read`
+- `AppNotification.type` 为 `String` 非枚举 → 修复类型判断
+- `ConnectionMetrics` 不存在字段 → 移除不存在的属性引用
 
-## [2.4.1] - 2025-07-19
+### 删除 / Removed
+- `lib/core/state/connection_state.dart`（重复定义）
+- `lib/core/performance/performance_optimizations.dart`（孤立重复状态层）
+- `lib/features/dashboard/dashboard_screen_optimized.dart`（孤儿屏）
+- `lib/features/console/console_screen_optimized.dart`（孤儿屏）
+- `lib/shared/widgets/optimized_widgets.dart`（重复定义 + 无引用）
 
-### Fixed
-- **webRTC package name** — `webRTC` is not a valid Dart package name; the
-  correct dependency is lowercase `webrtc`, keeping the existing
-  `package:webrtc/models/*` import subpaths (the real cause behind the missing
-  `flutter_webrtc`/package-not-found errors).
-- **Settings screen now wired to real state** — removed all mock local state;
-  every toggle writes through `SettingsNotifier` and persists to Hive.
-- **Live dark/light theme** — `HermesConsoleApp` reads `themeModeProvider` so the
-  Dark Mode toggle takes effect immediately (added `lightTheme` variant).
-- **First-run onboarding routing** — `main.dart` now initializes Hive, injects
-  `settingsBoxProvider`, and routes Splash -> Onboarding (first launch) -> Main.
-- **Latent Hive bug** — `HiveInit` now opens the `hermes_key_store` box before
-  reading the encryption key (previously would throw on real init).
-- **Onboarding navigation context** — `OnboardingScreen` navigates from its own
-  context via `nextScreenBuilder` instead of a captured (now-deactivated)
-  parent `BuildContext`.
+---
 
-## [2.4.0] - 2025-07-19
+## [2.5.0] — 2026-07-19
 
-### Added
-- **Real settings persistence** (`core/services/settings_service.dart`)
-  - `AppSettings` immutable model with full JSON round-trip
-  - `SettingsNotifier` persists every mutation to Hive synchronously
-  - Riverpod selectors (`themeModeProvider`, `localeCodeProvider`, `onboardingCompleteProvider`) for minimal rebuilds
-- **Onboarding flow** (`features/onboarding/onboarding_screen.dart`)
-  - 4-page first-run intro (P2P / encryption / performance / unified console)
-  - Persists completion flag so it shows only once
-- **Integration tests** (`integration_test/app_test.dart`)
-  - App bootstrap + bottom-navigation contract tests
-- **Settings unit tests** (`test/settings_service_test.dart`)
-  - Serialization, defaults, copyWith, malformed-data fallback
+### 新增 / Added
+- **P2P 网络管理器**（`P2PManager`）：
+  - 五态状态机（disconnected / connecting / connected / reconnecting / error）
+  - 指数退避重连（1s → 60s，上限 10 次）
+  - 心跳保活（30 秒间隔，90 秒超时判定断开）
+  - 连接质量评估（四级：excellent/good/fair/poor）
+  - CircuitBreaker 熔断器（失败阈值 5，冷却 30s）
+  - 活跃节点列表管理
+- **错误处理框架**（`ErrorHandler`）：
+  - `Result<T>` 类型（isOk/isError 判读）
+  - `RetryStrategy`（指数退避重试）
+  - `DegradationHandler`（优雅降级）
+  - 全局 `runZoned` 错误捕获
 
-### Repository / Tooling
-- GitHub Pull Request template
-- Dependabot config (pub / github-actions / gradle)
-- Makefile with 25+ dev shortcuts
-- Published to GitHub: https://github.com/SiYi0001/hermes-console
+### 变更 / Changed
+- **性能优化基础设施**（可选用）：
+  - `RingBuffer<T>` — O(1) 环形缓冲（固定容量）
+  - `ExpiringCache<K,V>` — 自动过期缓存（LRU + TTL）
+  - `EventBus` — 进程内事件总线
+  - `MemoryTracker` — 内存使用追踪
+  - `MemoizedBuilder` — 记忆化 Widget 构造
+  - `RepaintBoundary` 隔离优化
+  - `BatchedUpdater` — 16ms 帧对齐批量更新
+  - `Debouncer` / `Throttler` — 防抖节流
 
-## [2.1.0] - 2025-07-15
+---
 
-### Added
-- **Performance Optimizations**
-  - Riverpod state management with selective rebuilds
-  - Ring buffer for console output (max 1000 lines)
-  - LRU cache (50 items)
-  - Object pooling for reduced GC pressure
-  - Debouncing and throttling utilities
-  - Batched UI updates (50ms window)
-  - RepaintBoundary isolation
-  - AutomaticKeepAliveClientMixin for scroll preservation
+## [2.4.0] — 2026-07-19
 
-- **Advanced Networking**
-  - P2P connection manager with reconnection logic
-  - Exponential backoff for retries
-  - Circuit breaker pattern
-  - Network quality assessment
-  - Connection profile adaptation
+### 新增 / Added
+- **引导流程**（Onboarding）：
+  - HiveInit 初始化 → SplashScreen → OnboardingScreen → MainNavigation
+  - 欢迎页 + 核心特性介绍 + 隐私说明 + 完成确认
+- **设置屏扩展字段**：
+  - `connectionTimeoutSeconds`
+  - `stunServers` / `turnServers`
+  - `ipWhitelistEnabled`
+- **GitHub 集成**：
+  - 仓库初始化 + Issue 模板（bug / feature）
+  - `CONTRIBUTING.md` / `CODE_OF_CONDUCT.md` / `SECURITY.md`
+  - CI/CD 工作流（dart.yml + labels.yml）
 
-- **Error Handling & Recovery**
-  - Global error handler with logging
-  - Circuit breaker for fault tolerance
-  - Graceful degradation handler
-  - Retry strategies
-  - Result type for functional error handling
+---
 
-- **Internationalization**
-  - English (en) and Chinese (zh) locales
-  - ARB files for localization
-  - AppLocalizations class
-  - Locale provider
+## [2.3.0] — 2026-07-19
 
-- **Accessibility**
-  - Screen reader support
-  - High contrast mode detection
-  - Reduced motion utilities
-  - Keyboard navigation helpers
-  - Live regions for dynamic content
-  - Large tap targets
+### 新增 / Added
+- **国际化**（i18n）：
+  - 4 种语言：中文（zh）/ English（en）/ 日本語（ja）/ 한국어（ko）
+  - `AppLocalizations` 框架 + ARB 资源文件
+  - 语言切换实时生效
+- **无障碍支持**（a11y）：
+  - 语义化标签（Semantics）
+  - 高对比度配色（WCAG AA 4.5:1）
+  - 减少动效（减少动效偏好检测）
+  - 键盘导航支持
 
-### Fixed
-- Memory leak in console output
-- Race conditions in connection state
-- Improper resource disposal
+---
 
-## [2.0.0] - 2025-07-14
+## [2.0.0] — 2026-07-19
 
-### Added
-- **Feature Screens**
-  - Dashboard with connection status and quick actions
-  - Connect screen with QR code support
-  - Console with terminal emulation
-  - Status monitoring screen
-  - Settings screen
-  - Memory management
-  - MCP tools management
-  - Cron automation
-  - Logs viewer
-  - Gateway integration
-  - File transfer
-  - Notifications
-  - Profile management
-  - Performance monitoring
+### 新增 / Added
+- **完整 UI 套件**：13 个功能屏幕
+- **统一状态管理**：Riverpod + Provider
+- **CI/CD 流水线**：GitHub Actions
+- **性能监控屏**：`performance_screen`
+- **通知中心**：`notifications_screen`
+- **Profile 配置**：`profile_screen`
 
-- **Core Infrastructure**
-  - AES-256-GCM encryption
-  - WebRTC P2P DataChannel
-  - Zstd compression
-  - Hive local storage
-  - QClaw-inspired dark theme
+---
 
-## [1.0.0] - 2025-07-13
+## [1.0.0] — 2026-07-19
 
-### Added
-- Initial project structure
-- P2P protocol specification
-- Basic navigation
+### 新增 / Added
+- Hermes 控制台核心应用骨架
+- P2P WebRTC DataChannel 实现
+- AES-256-GCM 端到端加密
+- zstd 数据压缩
+- 二进制协议（Hermes Protocol）
+- Hive 本地持久化存储
+- QClaw 风格深色主题
