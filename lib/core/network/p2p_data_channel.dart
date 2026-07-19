@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_webrtc/webrtc.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../crypto/crypto_service.dart';
 import '../protocol/hermes_protocol.dart';
 import 'compression_service.dart';
@@ -30,17 +30,17 @@ class P2PDataChannelManager {
   
   final _stateController = StreamController<ConnectionState>.broadcast();
   final _messageController = StreamController<ProtocolMessage>.broadcast();
-  final _rawDataController = StreamController<Uint8List>.broadcast();
+  final _rawDataController = StreamController<String>.broadcast();
   
   Stream<ConnectionState> get stateStream => _stateController.stream;
   Stream<ProtocolMessage> get messageStream => _messageController.stream;
-  Stream<Uint8List> get rawDataStream => _rawDataController.stream;
+  Stream<String> get rawDataStream => _rawDataController.stream;
   
   ConnectionState get state => _state;
   
   // ICE Server configuration
-  static final RTCConfiguration _iceConfig = RTCConfiguration(
-    iceServers: [
+  static final Map<String, dynamic> _iceConfig = {
+    'iceServers': [
       // STUN servers
       {'urls': 'stun:stun.l.google.com:19302'},
       {'urls': 'stun:stun1.l.google.com:19302'},
@@ -51,10 +51,8 @@ class P2PDataChannelManager {
         'credential': 'hermes-secret',
       },
     ],
-    iceCandidatePoolSize: 10,
-    bundlePolicy: RTCBundlePolicy.maxBundle,
-    rtcpMuxPolicy: RTCRtcpMuxPolicy.require,
-  );
+    'iceCandidatePoolSize': 10,
+  };
 
   P2PDataChannelManager({
     required CryptoService cryptoService,
@@ -83,7 +81,7 @@ class P2PDataChannelManager {
       _setupDataChannelHandlers();
       
       // Create offer
-      final offer = await _peerConnection!.createOffer({});
+      final offer = await _peerConnection!.createOffer();
       await _peerConnection!.setLocalDescription(offer);
       
       // Wait for ICE gathering to complete
@@ -112,7 +110,7 @@ class P2PDataChannelManager {
       await _peerConnection!.setRemoteDescription(offer);
       
       // Create answer
-      final answer = await _peerConnection!.createAnswer({});
+      final answer = await _peerConnection!.createAnswer();
       await _peerConnection!.setLocalDescription(answer);
       
       // Wait for ICE gathering
@@ -143,7 +141,7 @@ class P2PDataChannelManager {
   Future<void> handleIceCandidate(String candidateData) async {
     try {
       final candidate = _decodeIceCandidate(candidateData);
-      await _peerConnection!.addIceCandidate(candidate);
+      await _peerConnection!.addCandidate(candidate);
     } catch (e) {
       // ICE candidate errors are usually not fatal
     }
@@ -191,11 +189,11 @@ class P2PDataChannelManager {
 
     _peerConnection!.onConnectionState = (state) {
       switch (state) {
-        case RTCPeerConnectionState.RTCPeerConnectionFailed:
-        case RTCPeerConnectionState.RTCPeerConnectionClosed:
+        case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
+        case RTCPeerConnectionState.RTCPeerConnectionStateClosed:
           _updateState(ConnectionState.disconnected);
           break;
-        case RTCPeerConnectionState.RTCPeerConnectionConnected:
+        case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
           // Wait for data channel to open
           break;
         default:
@@ -210,7 +208,7 @@ class P2PDataChannelManager {
   }
 
   void _setupDataChannelHandlers() {
-    _dataChannel!.onStateChange = (state) {
+    _dataChannel!.onDataChannelState = (state) {
       switch (state) {
         case RTCDataChannelState.RTCDataChannelOpen:
           _updateState(ConnectionState.connected);
@@ -259,11 +257,11 @@ class P2PDataChannelManager {
       }
     });
 
-    void checkComplete(RICECandidateType? type) {
+    void checkComplete(RTCIceGatheringState? type) {
       if (completer.isCompleted) return;
       
       _peerConnection!.getIceGatheringState().then((state) {
-        if (state == RICEGatheringState.RICEGatheringComplete) {
+        if (state == RTCIceGatheringState.RTCIceGatheringStateComplete) {
           timeout?.cancel();
           completer.complete();
         }
@@ -278,7 +276,7 @@ class P2PDataChannelManager {
 
   String _encodeSessionDescription(RTCSessionDescription desc) {
     return jsonEncode({
-      'type': desc.type.name,
+      'type': desc.type,
       'sdp': desc.sdp,
     });
   }

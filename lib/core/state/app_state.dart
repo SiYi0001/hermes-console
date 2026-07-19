@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/models.dart';
+export '../utils/utils.dart';
 
 /// Single source of truth for the advanced feature screens (memory, MCP,
 /// automation, gateway, transfer, logs, notifications). Screens read this via

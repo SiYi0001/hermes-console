@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/p2p_data_channel.dart';
 import '../../shared/theme/hermes_theme.dart';

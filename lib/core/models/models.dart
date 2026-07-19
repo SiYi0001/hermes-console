@@ -103,6 +103,8 @@ class McpServer {
     required this.lastUsed,
   });
 
+  bool get enabled => status == 'active';
+
   McpServer copyWith({
     String? name,
     String? status,

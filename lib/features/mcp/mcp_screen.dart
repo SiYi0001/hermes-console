@@ -282,7 +282,7 @@ class _ToolCard extends StatelessWidget {
         secondary: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: _getCategoryColor(tool.category).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-          child: Icon(_getCategoryColor(tool.category), color: tool.enabled ? _getCategoryColor(tool.category) : HermesTheme.textSecondary, size: 20),
+          child: Icon(Icons.extension, color: tool.enabled ? _getCategoryColor(tool.category) : HermesTheme.textSecondary, size: 20),
         ),
         title: Text(tool.name,
             style: TextStyle(fontWeight: FontWeight.w600, color: tool.enabled ? Colors.white : HermesTheme.textSecondary)),

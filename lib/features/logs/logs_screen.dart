@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/state/app_state.dart';
 import '../../shared/theme/hermes_theme.dart';
+import '../../core/models/models.dart';
 
 /// Logs Viewer Screen
 class LogsScreen extends ConsumerStatefulWidget {

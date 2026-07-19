@@ -495,7 +495,7 @@ class _ActiveContextCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...contexts.map((c) => _ContextItemRow(context: c)),
+          ...contexts.map((c) => _ContextItemRow(item: c)),
         ],
       ),
     );
@@ -503,26 +503,26 @@ class _ActiveContextCard extends StatelessWidget {
 }
 
 class _ContextItemRow extends StatelessWidget {
-  final _ActiveContextItem context;
-  const _ContextItemRow({required this.context});
+  final _ActiveContextItem item;
+  const _ContextItemRow({required this.item});
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(context.type == 'Directory' ? Icons.folder : context.type == 'File' ? Icons.insert_drive_file : Icons.psychology,
+            Icon(item.type == 'Directory' ? Icons.folder : item.type == 'File' ? Icons.insert_drive_file : Icons.psychology,
                 color: HermesTheme.textSecondary, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(context.name, style: const TextStyle(fontSize: 14, color: Colors.white)),
-                  Text(context.type, style: const TextStyle(fontSize: 11, color: HermesTheme.textSecondary)),
+                  Text(item.name, style: const TextStyle(fontSize: 14, color: Colors.white)),
+                  Text(item.type, style: const TextStyle(fontSize: 11, color: HermesTheme.textSecondary)),
                 ],
               ),
             ),
-            Text(context.size, style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary)),
+            Text(item.size, style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary)),
             const SizedBox(width: 8),
             const Icon(Icons.close, size: 16, color: HermesTheme.textTertiary),
           ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 
 /// Accessibility utilities and helpers
 class AccessibilityHelper {
@@ -79,7 +80,7 @@ class AccessibilityHelper {
     if (label != null) {
       return Semantics(label: label, child: child);
     }
-    return Semantics(excludedFromSemantics: true, child: child);
+    return ExcludeSemantics(child: child);
   }
 
   /// Large tap target for touch accessibility
@@ -149,8 +150,7 @@ class ReducedMotionUtils {
 /// High contrast theme utilities
 class HighContrastUtils {
   static bool isHighContrastMode(BuildContext context) {
-    return MediaQuery.highContrastStatusOf(context) == 
-        AccessibilityFeatureHighContrast.enabled;
+    return MediaQuery.highContrastOf(context);
   }
 
   static Color getHighContrastColor(Color normal, Color highContrast) {

@@ -155,7 +155,7 @@ class _TransferCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Text(Utils.formatBytes(transfer.sizeBytes), style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary)),
+                        Text(NetworkUtils.formatBytes(transfer.sizeBytes), style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary)),
                         const SizedBox(width: 8),
                         Icon(Icons.people_alt, size: 12, color: HermesTheme.textTertiary),
                         const SizedBox(width: 4),
@@ -316,7 +316,7 @@ class _SharedFileCard extends StatelessWidget {
           child: Icon(isImage ? Icons.image : Icons.description, color: color, size: 20),
         ),
         title: Text(file.name, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
-        subtitle: Text('${Utils.formatBytes(file.sizeBytes)} • ${file.sharedAt.relativeTime}',
+        subtitle: Text('${NetworkUtils.formatBytes(file.sizeBytes)} • ${file.sharedAt.relativeTime}',
             style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary)),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline, color: HermesTheme.textSecondary),

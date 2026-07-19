@@ -481,7 +481,7 @@ class _MainNavigationState extends State<MainNavigation> {
                     },
                   ),
                   _DrawerItem(
-                    icon: Icons.file_transfer,
+                    icon: Icons.file_copy,
                     label: 'File Transfer',
                     onTap: () {
                       Navigator.pop(context);

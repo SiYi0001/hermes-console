@@ -196,6 +196,20 @@ class _NotificationCard extends StatelessWidget {
 
   const _NotificationCard({required this.notification, required this.onDismiss, required this.onMarkRead});
 
+  String _priorityText() {
+    switch (notification.type) {
+      case 'success':
+        return 'Success';
+      case 'warning':
+        return 'Warning';
+      case 'error':
+        return 'Error';
+      case 'info':
+      default:
+        return 'Info';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _typeColor();

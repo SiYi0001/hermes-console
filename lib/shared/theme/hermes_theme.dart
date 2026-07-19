@@ -72,7 +72,7 @@ class HermesTheme {
       ),
       
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surfaceDark,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -146,7 +146,7 @@ class HermesTheme {
       ),
       
       // Tab Bar Theme
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: primaryBlue,
         unselectedLabelColor: textSecondary,
         indicatorColor: primaryBlue,
@@ -302,7 +302,7 @@ class HermesTheme {
           color: lightTextPrimary,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: lightSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(

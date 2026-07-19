@@ -136,7 +136,7 @@ class Result<T> {
   final T? data;
   final AppError? error;
   final bool isSuccess;
-  final bool isFailure => !isSuccess;
+  bool get isFailure => !isSuccess;
 
   Result._({this.data, this.error, required this.isSuccess});
 
@@ -190,6 +190,9 @@ class RetryStrategy implements RecoveryStrategy {
 
   @override
   bool get canRecover => true;
+
+  @override
+  int get maxAttempts => maxRetries;
 
   @override
   Future<bool> tryRecover(dynamic error) async {

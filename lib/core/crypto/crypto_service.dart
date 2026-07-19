@@ -5,7 +5,7 @@ import 'package:cryptography/cryptography.dart';
 class CryptoService {
   final AesGcm _aesGcm = AesGcm.with256bits();
   SecretKey? _sessionKey;
-  Nonce? _currentNonce;
+  List<int>? _currentNonce;
 
   /// Initialize with a pre-shared key or derive from DH
   Future<void> initializeKey(Uint8List keyBytes) async {
@@ -111,7 +111,7 @@ class KeyExchangeService {
       keyPair: localKeyPair,
       remotePublicKey: peerPublicKey,
     );
-    return await sharedSecret.extractBytes();
+    return Uint8List.fromList(await sharedSecret.extractBytes());
   }
 
   /// Convert bytes to public key
@@ -129,7 +129,6 @@ class HkdfService {
     final hkdf = Hkdf(
       hmac: Hmac.sha256(),
       outputLength: _keyLength,
-      info: Uint8List.fromList('hermes-console-v1'.codeUnits),
     );
 
     final derivedKey = await hkdf.deriveKey(

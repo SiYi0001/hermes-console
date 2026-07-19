@@ -72,7 +72,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     await ref.read(settingsProvider.notifier).completeOnboarding();
     if (mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: nextScreenBuilder),
+        MaterialPageRoute(builder: widget.nextScreenBuilder),
       );
     }
   }

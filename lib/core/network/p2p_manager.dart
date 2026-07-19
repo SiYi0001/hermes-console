@@ -275,6 +275,13 @@ class ConnectionProfile {
   final bool compressionEnabled;
   final int heartbeatInterval;
 
+  ConnectionProfile({
+    required this.quality,
+    required this.maxBufferSize,
+    required this.compressionEnabled,
+    required this.heartbeatInterval,
+  });
+
   static ConnectionProfile forQuality(QualityLevel quality) {
     switch (quality) {
       case QualityLevel.excellent:
