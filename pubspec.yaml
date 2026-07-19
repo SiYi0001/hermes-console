@@ -15,13 +15,12 @@ dependencies:
   riverpod_annotation: ^2.3.3
   
   # P2P & Network
-  webrtc: ^0.9.4
+  flutter_webrtc: ^0.9.4
   connectivity_plus: ^5.0.2
   
   # Cryptography & Security
   cryptography: ^2.7.0
   pointycastle: ^3.7.4
-  secure_storage: ^9.0.0
   
   # Compression
   archive: ^3.4.10
