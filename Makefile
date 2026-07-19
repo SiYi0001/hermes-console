@@ -15,6 +15,9 @@
 # 默认目标：显示帮助
 .DEFAULT_GOAL := help
 
+# Flutter 命令（使用 FVM 时可在调用前 export FLUTTER="fvm flutter"）
+FLUTTER ?= flutter
+
 ## ──────────────────────────────────────────
 # 开发命令
 ## ──────────────────────────────────────────
@@ -33,29 +36,29 @@ help: ## 显示帮助信息 / Show this help
 	@echo ""
 
 pub-get: ## 安装依赖 / Install dependencies
-	flutter pub get
+$(FLUTTER) pub get
 
 pub-upgrade: ## 升级依赖 / Upgrade dependencies
-	flutter pub upgrade
+$(FLUTTER) pub upgrade
 
 ## ──────────────────────────────────────────
 # 代码质量
 ## ──────────────────────────────────────────
 
 analyze: ## 静态分析 / Run Flutter analyze
-	flutter analyze --no-fatal-infos --no-fatal-warnings
+$(FLUTTER) analyze --no-fatal-infos --no-fatal-warnings
 
 lint: ## 运行 lint / Run linter
-	flutter analyze
+$(FLUTTER) analyze
 
 format: ## 格式化代码 / Format code
-	flutter format lib/ test/
+$(FLUTTER) format lib/ test/
 
 test: ## 运行单元测试 / Run unit tests
-	flutter test --no-pub
+$(FLUTTER) test --no-pub
 
 test-coverage: ## 运行测试并生成覆盖率 / Run tests with coverage
-	flutter test --no-pub --coverage
+$(FLUTTER) test --no-pub --coverage
 	genhtml coverage/lcov.info -o coverage/html
 	@echo "覆盖率报告: coverage/html/index.html"
 
@@ -66,33 +69,33 @@ test-coverage: ## 运行测试并生成覆盖率 / Run tests with coverage
 build: build-apk build-ios build-web ## 构建所有平台 / Build all platforms
 
 build-apk: ## 构建 Android APK / Build Android debug APK
-	flutter build apk --debug
+$(FLUTTER) build apk --debug
 
 build-web: ## 构建 Web / Build Web app
-	flutter build web
+$(FLUTTER) build web
 
 run-android: ## 在 Android 设备/模拟器运行 / Run on Android
-	flutter run -d android
+$(FLUTTER) run -d android
 
 run-ios: ## 在 iOS 模拟器运行 / Run on iOS simulator
-	flutter run -d iphone
+$(FLUTTER) run -d iphone
 
 ## ──────────────────────────────────────────
 # 发布构建
 ## ──────────────────────────────────────────
 
 release-apk: ## 构建 Android Release APK / Build Android release APK
-	flutter build apk --release --obfuscate --split-debug-info=build/debug-info
+$(FLUTTER) build apk --release --obfuscate --split-debug-info=build/debug-info
 
 release-ios: ## 构建 iOS Release / Build iOS release
-	flutter build ios --release
+$(FLUTTER) build ios --release
 
 ## ──────────────────────────────────────────
 # 清理
 ## ──────────────────────────────────────────
 
 clean: ## 清理构建产物 / Clean build artifacts
-	flutter clean
+$(FLUTTER) clean
 	rm -rf coverage/
 	rm -rf build/
 	rm -f .dart_tool/package_config.json

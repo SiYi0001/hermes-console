@@ -87,7 +87,7 @@ lib/
 
 | 依赖 | 版本 |
 |------|------|
-| Flutter SDK | ≥ 3.3.0 |
+| Flutter SDK | ≥ 3.3.0（推荐用 FVM 锁定，见 .fvmrc） |
 | Dart | ≥ 3.3.0 |
 | Android SDK | ≥ 21 |
 | Xcode | ≥ 14（iOS 构建） |
@@ -114,6 +114,21 @@ flutter build apk --release
 # 构建 iOS Release
 flutter build ios --release
 ```
+
+> 💡 **使用 FVM（推荐）**：用 FVM 锁定 Flutter 版本，保证团队环境一致。
+> ```bash
+> # 安装 FVM（一次性）
+> dart pub global activate fvm
+> # 安装并切换本项目锁定的 Flutter 版本
+> fvm install
+> fvm use
+> # 之后所有命令用 `fvm flutter` 替代 `flutter`，例如：
+> fvm flutter pub get
+> ```
+> 或直接用仓库内置初始化脚本：
+> ```bash
+> ./setup.sh
+> ```
 
 > ⚠️ **首次运行**：请将 `assets/fonts/` 下的 JetBrainsMono 字体占位文件替换为真实字体。
 > 下载地址：https://www.jetbrains.com/lp/mono/

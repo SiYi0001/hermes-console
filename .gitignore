@@ -107,6 +107,7 @@ build/
 lib/config/local_config.dart
 .env
 .env.*
+!.env.example
 secrets.json
 
 # Firebase
@@ -118,3 +119,4 @@ firebase.json
 *.sh
 build.sh
 deploy.sh
+!setup.sh
