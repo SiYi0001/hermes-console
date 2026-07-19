@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:typed_data';
 import 'package:hermes_console/core/crypto/crypto_service.dart';
 import 'package:hermes_console/core/network/compression_service.dart';
 import 'package:hermes_console/core/protocol/hermes_protocol.dart';
@@ -184,7 +185,7 @@ void main() {
     });
 
     test('should compress repetitive data well', () {
-      final repetitiveData = Uint8List.fromList('AAAA' * 1000);
+      final repetitiveData = Uint8List.fromList(('AAAA' * 1000).codeUnits);
 
       final compressed = compressionService.compress(repetitiveData);
 

@@ -1,310 +1,184 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_console/core/crypto/crypto_service.dart';
 
 void main() {
-  late CryptoService crypto;
+  group('CryptoService', () {
+    late CryptoService crypto;
 
-  setUpAll(() {
-    crypto = CryptoService();
-  });
-
-  group('CryptoService — Key Generation', () {
-    test('generateKeyPair creates valid Curve25519 key pair', () async {
-      final keyPair = await crypto.generateKeyPair();
-
-      expect(keyPair.publicKey, isNotEmpty);
-      expect(keyPair.privateKey, isNotEmpty);
-      expect(keyPair.publicKey.length, greaterThan(0));
-      expect(keyPair.privateKey.length, greaterThan(0));
-      // 公钥和私钥不应相同
-      expect(keyPair.publicKey, isNot(equals(keyPair.privateKey)));
+    setUp(() {
+      crypto = CryptoService();
     });
 
-    test('generated keys are deterministic (seeded by random)', () async {
-      final kp1 = await crypto.generateKeyPair();
-      final kp2 = await crypto.generateKeyPair();
+    test('is not initialized before a key is set', () {
+      expect(crypto.isInitialized, isFalse);
+    });
 
-      // 每次生成应当不同（基于随机数）
-      expect(kp1.publicKey, isNot(equals(kp2.publicKey)));
+    test('encrypt throws StateError when not initialized', () {
+      expect(
+        () => crypto.encrypt(Uint8List.fromList([1, 2, 3])),
+        throwsStateError,
+      );
+    });
+
+    test('encrypt/decrypt round-trip recovers plaintext', () async {
+      await crypto.initializeKey(
+        Uint8List.fromList(List<int>.generate(32, (i) => i)),
+      );
+      final plaintext =
+          Uint8List.fromList(utf8.encode('Hello, Hermes! 你好 🎉'));
+
+      final encrypted = await crypto.encrypt(plaintext);
+      final decrypted = await crypto.decrypt(encrypted);
+
+      expect(decrypted, equals(plaintext));
+      expect(encrypted, isNot(equals(plaintext)));
+    });
+
+    test('same plaintext yields different ciphertext (random nonce)', () async {
+      await crypto.initializeKey(
+        Uint8List.fromList(List<int>.generate(32, (i) => i)),
+      );
+      final data = Uint8List.fromList(utf8.encode('test'));
+
+      final e1 = await crypto.encrypt(data);
+      final e2 = await crypto.encrypt(data);
+
+      expect(e1, isNot(equals(e2)));
+    });
+
+    test('generateSessionKey initializes and returns a 32-byte key', () async {
+      final key = await crypto.generateSessionKey();
+      expect(key.length, equals(32));
+      expect(crypto.isInitialized, isTrue);
+    });
+
+    test('clearSession resets the initialized state', () async {
+      await crypto.generateSessionKey();
+      expect(crypto.isInitialized, isTrue);
+
+      crypto.clearSession();
+      expect(crypto.isInitialized, isFalse);
+    });
+
+    test('decrypt throws ArgumentError on too-short data', () async {
+      await crypto.initializeKey(
+        Uint8List.fromList(List<int>.generate(32, (i) => i)),
+      );
+      expect(
+        () => crypto.decrypt(Uint8List.fromList([1, 2, 3])),
+        throwsArgumentError,
+      );
     });
   });
 
-  group('CryptoService — ECDH Key Exchange', () {
-    test('ECDH produces same shared secret for both parties', () async {
-      final alice = await crypto.generateKeyPair();
-      final bob = await crypto.generateKeyPair();
+  group('KeyExchangeService', () {
+    late KeyExchangeService kex;
 
-      final sharedAlice = crypto.deriveSharedSecret(
-        bob.publicKey, // Alice 用 Bob 的公钥
-        alice.privateKey,
-      );
-      final sharedBob = crypto.deriveSharedSecret(
-        alice.publicKey, // Bob 用 Alice 的公钥
-        bob.privateKey,
-      );
+    setUp(() {
+      kex = KeyExchangeService();
+    });
+
+    test('generateKeyPair creates a valid X25519 key pair', () async {
+      final kp = await kex.generateKeyPair();
+      final pub = await kp.extractPublicKey();
+      final priv = await kp.extractPrivateKeyBytes();
+
+      expect(pub.bytes, isNotEmpty);
+      expect(priv, isNotEmpty);
+      expect(pub.bytes.length, equals(32));
+      expect(priv.length, equals(32));
+    });
+
+    test('generated key pairs are unique', () async {
+      final kp1 = await kex.generateKeyPair();
+      final kp2 = await kex.generateKeyPair();
+
+      final pub1 = await kp1.extractPublicKey();
+      final pub2 = await kp2.extractPublicKey();
+
+      expect(pub1.bytes, isNot(equals(pub2.bytes)));
+    });
+
+    test('ECDH derives identical shared secret in both directions', () async {
+      final alice = await kex.generateKeyPair();
+      final bob = await kex.generateKeyPair();
+
+      final alicePub = await alice.extractPublicKey();
+      final bobPub = await bob.extractPublicKey();
+
+      final sharedAlice = await kex.deriveSharedSecret(alice, bobPub);
+      final sharedBob = await kex.deriveSharedSecret(bob, alicePub);
 
       expect(sharedAlice, equals(sharedBob));
-      expect(sharedAlice.length, greaterThan(0));
+      expect(sharedAlice.length, equals(32));
     });
 
-    test('ECDH with mismatched keys produces different secrets', () async {
-      final alice = await crypto.generateKeyPair();
-      final bob = await crypto.generateKeyPair();
-      final charlie = await crypto.generateKeyPair();
+    test('ECDH with different peers yields different secrets', () async {
+      final alice = await kex.generateKeyPair();
+      final bob = await kex.generateKeyPair();
+      final charlie = await kex.generateKeyPair();
 
-      final sharedAlice = crypto.deriveSharedSecret(bob.publicKey, alice.privateKey);
-      final sharedCharlie = crypto.deriveSharedSecret(
-        charlie.publicKey,
-        alice.privateKey,
-      );
+      final alicePub = await alice.extractPublicKey();
+      final bobPub = await bob.extractPublicKey();
+      final charliePub = await charlie.extractPublicKey();
 
-      expect(sharedAlice, isNot(equals(sharedCharlie)));
-    });
-  });
+      final sharedAB = await kex.deriveSharedSecret(alice, bobPub);
+      final sharedAC = await kex.deriveSharedSecret(alice, charliePub);
 
-  group('CryptoService — HKDF Key Derivation', () {
-    test('HKDF derives 32-byte session key from IKM', () {
-      final ikm = List<int>.generate(32, (i) => i * 4 % 256);
-      final sessionKey = crypto.hkdfDerive(
-        ikm: Uint8List.fromList(ikm),
-        info: 'hermes-v1',
-        length: 32,
-      );
-
-      expect(sessionKey.length, equals(32));
+      expect(sharedAB, isNot(equals(sharedAC)));
     });
 
-    test('HKDF with different info produces different keys', () {
-      final ikm = List<int>.generate(32, (i) => i * 4 % 256);
-      final key1 = crypto.hkdfDerive(
-        ikm: Uint8List.fromList(ikm),
-        info: 'hermes-v1',
-        length: 32,
-      );
-      final key2 = crypto.hkdfDerive(
-        ikm: Uint8List.fromList(ikm),
-        info: 'hermes-v2',
-        length: 32,
-      );
+    test('bytesToPublicKey reconstructs a usable public key', () async {
+      final kp = await kex.generateKeyPair();
+      final pub = await kp.extractPublicKey();
 
-      expect(key1, isNot(equals(key2)));
-    });
-
-    test('HKDF with different length produces correct size', () {
-      final ikm = List<int>.generate(32, (i) => i * 4 % 256);
-      final key64 = crypto.hkdfDerive(
-        ikm: Uint8List.fromList(ikm),
-        info: 'hermes-v1',
-        length: 64,
-      );
-
-      expect(key64.length, equals(64));
+      final restored = kex.bytesToPublicKey(Uint8List.fromList(pub.bytes));
+      expect(restored.bytes, equals(pub.bytes));
     });
   });
 
-  group('CryptoService — AES-256-GCM Encryption', () {
-    test('encrypt/decrypt round-trip recovers plaintext', () async {
-      final plaintext = 'Hello, Hermes! 你好 Hermès! 🎉';
-      final plaintextBytes = Uint8List.fromList(utf8.encode(plaintext));
+  group('HkdfService', () {
+    late HkdfService hkdf;
 
-      final keyPair = await crypto.generateKeyPair();
-      final sharedKey = crypto.deriveSharedSecret(
-        keyPair.publicKey,
-        keyPair.privateKey,
-      );
-      final sessionKey = crypto.hkdfDerive(
-        ikm: sharedKey,
-        info: 'hermes-v1',
-        length: 32,
-      );
-      final nonce = crypto.generateNonce();
-
-      final encrypted = crypto.encryptAesGcm(
-        plaintext: plaintextBytes,
-        key: sessionKey,
-        nonce: nonce,
-      );
-
-      expect(encrypted, isNot(equals(plaintextBytes)));
-
-      final decrypted = crypto.decryptAesGcm(
-        ciphertext: encrypted,
-        key: sessionKey,
-        nonce: nonce,
-      );
-
-      expect(utf8.decode(decrypted), equals(plaintext));
+    setUp(() {
+      hkdf = HkdfService();
     });
 
-    test('different nonce produces different ciphertext', () async {
-      final plaintext = Uint8List.fromList(utf8.encode('test'));
-      final keyPair = await crypto.generateKeyPair();
-      final sharedKey = crypto.deriveSharedSecret(
-        keyPair.publicKey,
-        keyPair.privateKey,
-      );
-      final sessionKey = crypto.hkdfDerive(
-        ikm: sharedKey,
-        info: 'hermes-v1',
-        length: 32,
-      );
+    test('deriveKeys returns 32-byte encryption and mac keys', () async {
+      final ikm = Uint8List.fromList(List<int>.generate(32, (i) => i));
 
-      final encrypted1 = crypto.encryptAesGcm(
-        plaintext: plaintext,
-        key: sessionKey,
-        nonce: crypto.generateNonce(),
-      );
-      final encrypted2 = crypto.encryptAesGcm(
-        plaintext: plaintext,
-        key: sessionKey,
-        nonce: crypto.generateNonce(),
-      );
+      final keys = await hkdf.deriveKeys(ikm);
 
-      expect(encrypted1, isNot(equals(encrypted2)));
+      expect(keys.encryptionKey.length, equals(32));
+      expect(keys.macKey.length, equals(32));
+      expect(keys.encryptionKey, isNot(equals(keys.macKey)));
     });
 
-    test('wrong nonce fails to decrypt', () async {
-      final plaintext = Uint8List.fromList(utf8.encode('secret'));
-      final keyPair = await crypto.generateKeyPair();
-      final sharedKey = crypto.deriveSharedSecret(
-        keyPair.publicKey,
-        keyPair.privateKey,
-      );
-      final sessionKey = crypto.hkdfDerive(
-        ikm: sharedKey,
-        info: 'hermes-v1',
-        length: 32,
-      );
+    test('deriveKeys is deterministic for the same input', () async {
+      final ikm = Uint8List.fromList(List<int>.generate(32, (i) => i));
 
-      final encrypted = crypto.encryptAesGcm(
-        plaintext: plaintext,
-        key: sessionKey,
-        nonce: crypto.generateNonce(),
-      );
+      final k1 = await hkdf.deriveKeys(ikm);
+      final k2 = await hkdf.deriveKeys(ikm);
 
-      final wrongNonce = crypto.generateNonce();
-      final decrypted = crypto.decryptAesGcm(
-        ciphertext: encrypted,
-        key: sessionKey,
-        nonce: wrongNonce,
-      );
-
-      // AES-GCM 带 tag 验证，nonce 不匹配会破坏认证标签
-      // 行为取决于实现：可能返回错误数据或抛出异常
-      // 这里只检查解密结果与原文不同（认证失败）
-      expect(utf8.decode(decrypted), isNot(equals('secret')));
+      expect(k1.encryptionKey, equals(k2.encryptionKey));
+      expect(k1.macKey, equals(k2.macKey));
     });
 
-    test('wrong key fails to decrypt', () async {
-      final plaintext = Uint8List.fromList(utf8.encode('secret'));
-      final keyPair = await crypto.generateKeyPair();
-      final sharedKey = crypto.deriveSharedSecret(
-        keyPair.publicKey,
-        keyPair.privateKey,
-      );
-      final correctKey = crypto.hkdfDerive(
-        ikm: sharedKey,
-        info: 'hermes-v1',
-        length: 32,
-      );
-      final wrongKey = crypto.hkdfDerive(
-        ikm: sharedKey,
-        info: 'wrong-key',
-        length: 32,
-      );
-      final nonce = crypto.generateNonce();
+    test('different salt yields different keys', () async {
+      final ikm = Uint8List.fromList(List<int>.generate(32, (i) => i));
 
-      final encrypted = crypto.encryptAesGcm(
-        plaintext: plaintext,
-        key: correctKey,
-        nonce: nonce,
+      final k1 = await hkdf.deriveKeys(
+        ikm,
+        salt: Uint8List.fromList([1, 2, 3]),
+      );
+      final k2 = await hkdf.deriveKeys(
+        ikm,
+        salt: Uint8List.fromList([4, 5, 6]),
       );
 
-      final decrypted = crypto.decryptAesGcm(
-        ciphertext: encrypted,
-        key: wrongKey,
-        nonce: nonce,
-      );
-
-      expect(utf8.decode(decrypted), isNot(equals('secret')));
-    });
-
-    test('handles empty plaintext', () async {
-      final plaintext = Uint8List(0);
-      final keyPair = await crypto.generateKeyPair();
-      final sharedKey = crypto.deriveSharedSecret(
-        keyPair.publicKey,
-        keyPair.privateKey,
-      );
-      final sessionKey = crypto.hkdfDerive(
-        ikm: sharedKey,
-        info: 'hermes-v1',
-        length: 32,
-      );
-      final nonce = crypto.generateNonce();
-
-      final encrypted = crypto.encryptAesGcm(
-        plaintext: plaintext,
-        key: sessionKey,
-        nonce: nonce,
-      );
-      final decrypted = crypto.decryptAesGcm(
-        ciphertext: encrypted,
-        key: sessionKey,
-        nonce: nonce,
-      );
-
-      expect(decrypted, isEmpty);
-    });
-
-    test('handles large plaintext (1MB)', () async {
-      final plaintext = Uint8List.fromList(
-        List<int>.generate(1024 * 1024, (i) => i % 256),
-      );
-      final keyPair = await crypto.generateKeyPair();
-      final sharedKey = crypto.deriveSharedSecret(
-        keyPair.publicKey,
-        keyPair.privateKey,
-      );
-      final sessionKey = crypto.hkdfDerive(
-        ikm: sharedKey,
-        info: 'hermes-v1',
-        length: 32,
-      );
-      final nonce = crypto.generateNonce();
-
-      final encrypted = crypto.encryptAesGcm(
-        plaintext: plaintext,
-        key: sessionKey,
-        nonce: nonce,
-      );
-      final decrypted = crypto.decryptAesGcm(
-        ciphertext: encrypted,
-        key: sessionKey,
-        nonce: nonce,
-      );
-
-      expect(decrypted.length, equals(plaintext.length));
-      for (var i = 0; i < plaintext.length; i++) {
-        expect(decrypted[i], equals(plaintext[i]));
-      }
-    });
-  });
-
-  group('CryptoService — Nonce Generation', () {
-    test('generateNonce creates 12-byte nonce', () {
-      final nonce = crypto.generateNonce();
-      expect(nonce.length, equals(12));
-    });
-
-    test('generateNonce produces unique values', () {
-      final nonce1 = crypto.generateNonce();
-      final nonce2 = crypto.generateNonce();
-      expect(nonce1, isNot(equals(nonce2)));
+      expect(k1.encryptionKey, isNot(equals(k2.encryptionKey)));
     });
   });
 }
-
-// Re-export for convenience
-import 'dart:typed_data';
-import 'dart:convert';

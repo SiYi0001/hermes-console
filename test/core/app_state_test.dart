@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_console/core/models/models.dart';
 import 'package:hermes_console/core/state/app_state.dart';
 
 void main() {
@@ -8,331 +9,289 @@ void main() {
     notifier = AppStateNotifier();
   });
 
-  group('AppState — Default Values', () {
-    test('initial state has empty lists and default settings', () {
+  group('AppState — Seed', () {
+    test('initial state is seeded with real local data', () {
       final state = notifier.state;
 
-      expect(state.memories, isEmpty);
-      expect(state.mcpServers, isEmpty);
-      expect(state.cronTasks, isEmpty);
-      expect(state.toolLogs, isEmpty);
-      expect(state.gatewayChannels, isEmpty);
-      expect(state.transfers, isEmpty);
-      expect(state.sharedFiles, isEmpty);
-      expect(state.notifications, isEmpty);
-    });
-
-    test('default settings has sensible values', () {
-      final settings = notifier.state.settings;
-
-      expect(settings.darkMode, isTrue);
-      expect(settings.encryptionEnabled, isTrue);
-      expect(settings.compressionEnabled, isTrue);
-      expect(settings.autoReconnect, isTrue);
-      expect(settings.language, equals('zh'));
-    });
-  });
-
-  group('AppState — Settings', () {
-    test('updateSettings replaces all settings', () {
-      final newSettings = AppSettings(
-        darkMode: false,
-        language: 'en',
-        encryptionEnabled: false,
-        compressionEnabled: false,
-        autoReconnect: false,
-        connectionTimeoutSeconds: 60,
-        stunServers: ['stun:custom.example.com:19302'],
-        turnServers: [],
-        ipWhitelistEnabled: true,
-      );
-
-      notifier.updateSettings(newSettings);
-
-      expect(notifier.state.settings.darkMode, isFalse);
-      expect(notifier.state.settings.language, equals('en'));
-      expect(notifier.state.settings.encryptionEnabled, isFalse);
-    });
-
-    test('updateSettings preserves unmodified fields', () {
-      final original = notifier.state.settings;
-      notifier.updateSettings(original.copyWith(language: 'ja'));
-
-      expect(notifier.state.settings.darkMode, equals(original.darkMode));
-      expect(notifier.state.settings.encryptionEnabled,
-          equals(original.encryptionEnabled));
-      expect(notifier.state.settings.language, equals('ja'));
+      expect(state.memories, isNotEmpty);
+      expect(state.mcpServers, isNotEmpty);
+      expect(state.cronTasks, isNotEmpty);
+      expect(state.gatewayChannels, isNotEmpty);
+      expect(state.notifications, isNotEmpty);
+      expect(state.profile, isNotNull);
     });
   });
 
   group('AppState — Memory Management', () {
-    test('addMemory adds item to list', () {
-      final memory = SharedMemory(
-        id: 'mem-1',
-        content: 'Test memory',
+    test('addMemory appends an item', () {
+      final before = notifier.state.memories.length;
+      final memory = MemoryItem(
+        id: 'mem-test',
+        title: 'Test Memory',
+        content: 'Test content',
         category: 'test',
-        tags: ['unit-test'],
-        createdAt: DateTime.now(),
-        lastAccessed: DateTime.now(),
-        accessCount: 0,
-        pinned: false,
+        timestamp: DateTime.now(),
+        importance: 3,
       );
 
       notifier.addMemory(memory);
 
-      expect(notifier.state.memories.length, equals(1));
-      expect(notifier.state.memories.first.content, equals('Test memory'));
+      expect(notifier.state.memories.length, equals(before + 1));
+      expect(notifier.state.memories.last.content, equals('Test content'));
     });
 
-    test('deleteMemory removes item by id', () {
-      final memory = SharedMemory(
+    test('removeMemory deletes an item by id', () {
+      notifier.addMemory(MemoryItem(
         id: 'mem-del',
-        content: 'To be deleted',
+        title: 'To delete',
+        content: 'C',
         category: 'test',
-        tags: [],
-        createdAt: DateTime.now(),
-        lastAccessed: DateTime.now(),
-        accessCount: 0,
-        pinned: false,
-      );
-
-      notifier.addMemory(memory);
-      expect(notifier.state.memories.length, equals(1));
-
-      notifier.deleteMemory('mem-del');
-      expect(notifier.state.memories, isEmpty);
-    });
-
-    test('deleteMemory does nothing for non-existent id', () {
-      notifier.addMemory(SharedMemory(
-        id: 'mem-1',
-        content: 'Memory',
-        category: 'test',
-        tags: [],
-        createdAt: DateTime.now(),
-        lastAccessed: DateTime.now(),
-        accessCount: 0,
-        pinned: false,
+        timestamp: DateTime.now(),
+        importance: 1,
       ));
+      expect(notifier.state.memories.length, greaterThan(0));
 
-      notifier.deleteMemory('non-existent-id');
-      expect(notifier.state.memories.length, equals(1));
+      notifier.removeMemory('mem-del');
+
+      expect(
+        notifier.state.memories.any((m) => m.id == 'mem-del'),
+        isFalse,
+      );
     });
 
-    test('updateMemory modifies existing item', () {
-      final memory = SharedMemory(
+    test('removeMemory is a no-op for unknown id', () {
+      final before = notifier.state.memories.length;
+      notifier.removeMemory('does-not-exist');
+      expect(notifier.state.memories.length, equals(before));
+    });
+
+    test('updateMemory replaces an existing item', () {
+      final memory = MemoryItem(
         id: 'mem-update',
-        content: 'Original',
+        title: 'Original',
+        content: 'Original content',
         category: 'test',
-        tags: [],
-        createdAt: DateTime.now(),
-        lastAccessed: DateTime.now(),
-        accessCount: 0,
-        pinned: false,
+        timestamp: DateTime.now(),
+        importance: 2,
+      );
+      notifier.addMemory(memory);
+
+      notifier.updateMemory(
+        memory.copyWith(title: 'Updated', importance: 5),
       );
 
-      notifier.addMemory(memory);
-      notifier.updateMemory(memory.copyWith(content: 'Updated', pinned: true));
-
-      final updated = notifier.state.memories.first;
-      expect(updated.content, equals('Updated'));
-      expect(updated.pinned, isTrue);
-    });
-
-    test('clearMemories removes all memories', () {
-      notifier.addMemory(SharedMemory(
-        id: 'm1', content: 'C1', category: 'test',
-        tags: [], createdAt: DateTime.now(),
-        lastAccessed: DateTime.now(), accessCount: 0, pinned: false,
-      ));
-      notifier.addMemory(SharedMemory(
-        id: 'm2', content: 'C2', category: 'test',
-        tags: [], createdAt: DateTime.now(),
-        lastAccessed: DateTime.now(), accessCount: 0, pinned: false,
-      ));
-
-      notifier.clearMemories();
-
-      expect(notifier.state.memories, isEmpty);
+      final updated =
+          notifier.state.memories.firstWhere((m) => m.id == 'mem-update');
+      expect(updated.title, equals('Updated'));
+      expect(updated.importance, equals(5));
     });
   });
 
   group('AppState — MCP Servers', () {
-    test('addMcpServer adds server', () {
+    test('addMcpServer appends a server', () {
+      final before = notifier.state.mcpServers.length;
       final server = McpServer(
         id: 'srv-1',
         name: 'Test Server',
-        url: 'http://localhost:8080',
-        enabled: false,
-        tools: [],
-        lastSync: DateTime.now(),
+        type: 'local',
+        status: 'active',
+        toolsCount: 0,
+        lastUsed: DateTime.now(),
       );
 
       notifier.addMcpServer(server);
 
-      expect(notifier.state.mcpServers.length, equals(1));
-      expect(notifier.state.mcpServers.first.name, equals('Test Server'));
+      expect(notifier.state.mcpServers.length, equals(before + 1));
+      expect(notifier.state.mcpServers.last.name, equals('Test Server'));
     });
 
-    test('toggleMcpServer flips enabled state', () {
+    test('McpServer.enabled mirrors active status', () {
       final server = McpServer(
-        id: 'srv-toggle',
-        name: 'Toggle Test',
-        url: 'http://localhost:8081',
-        enabled: false,
-        tools: [],
-        lastSync: DateTime.now(),
+        id: 'srv-active',
+        name: 'Active',
+        type: 'local',
+        status: 'active',
+        toolsCount: 0,
+        lastUsed: DateTime.now(),
       );
+      expect(server.enabled, isTrue);
 
-      notifier.addMcpServer(server);
-      expect(notifier.state.mcpServers.first.enabled, isFalse);
-
-      notifier.toggleMcpServer('srv-toggle', true);
-      expect(notifier.state.mcpServers.first.enabled, isTrue);
-
-      notifier.toggleMcpServer('srv-toggle', false);
-      expect(notifier.state.mcpServers.first.enabled, isFalse);
+      final inactive = McpServer(
+        id: 'srv-inactive',
+        name: 'Inactive',
+        type: 'remote',
+        status: 'inactive',
+        toolsCount: 0,
+        lastUsed: DateTime.now(),
+      );
+      expect(inactive.enabled, isFalse);
     });
 
-    test('removeMcpServer deletes server and its tools', () {
-      final server = McpServer(
+    test('removeMcpServer deletes a server by id', () {
+      notifier.addMcpServer(McpServer(
         id: 'srv-del',
-        name: 'Delete Test',
-        url: 'http://localhost:8082',
-        enabled: true,
-        tools: [
-          McpTool(
-            id: 'tool-1', name: 'tool', description: 't',
-            inputSchema: {}, serverId: 'srv-del',
-          ),
-        ],
-        lastSync: DateTime.now(),
-      );
+        name: 'Delete',
+        type: 'local',
+        status: 'active',
+        toolsCount: 0,
+        lastUsed: DateTime.now(),
+      ));
 
-      notifier.addMcpServer(server);
       notifier.removeMcpServer('srv-del');
 
-      expect(notifier.state.mcpServers, isEmpty);
+      expect(
+        notifier.state.mcpServers.any((s) => s.id == 'srv-del'),
+        isFalse,
+      );
+    });
+
+    test('restartMcpServer updates lastUsed', () async {
+      notifier.addMcpServer(McpServer(
+        id: 'srv-restart',
+        name: 'Restart',
+        type: 'local',
+        status: 'active',
+        toolsCount: 0,
+        lastUsed: DateTime.now().subtract(const Duration(days: 1)),
+      ));
+
+      notifier.restartMcpServer('srv-restart');
+
+      final restarted = notifier.state.mcpServers
+          .firstWhere((s) => s.id == 'srv-restart');
+      expect(
+        restarted.lastUsed.isAfter(
+          DateTime.now().subtract(const Duration(minutes: 1)),
+        ),
+        isTrue,
+      );
+    });
+  });
+
+  group('AppState — Tools', () {
+    test('toggleToolEnabled flips a built-in tool by name', () {
+      final target = notifier.state.builtInTools
+          .firstWhere((t) => t.name == 'browser');
+      expect(target.enabled, isFalse);
+
+      notifier.toggleToolEnabled('browser', true);
+      final toggled = notifier.state.builtInTools
+          .firstWhere((t) => t.name == 'browser');
+      expect(toggled.enabled, isTrue);
     });
   });
 
   group('AppState — Cron Tasks', () {
-    test('addCronTask adds task', () {
+    test('addCronTask appends a task', () {
+      final before = notifier.state.cronTasks.length;
       final task = CronTask(
         id: 'cron-1',
         name: 'Daily Backup',
-        cronExpression: '0 2 * * *',
-        command: 'backup.sh',
-        args: {},
+        expression: '0 2 * * *',
+        description: 'Backup',
         enabled: true,
-        lastRun: null,
-        nextRun: DateTime.now().add(const Duration(days: 1)),
-        createdAt: DateTime.now(),
       );
 
       notifier.addCronTask(task);
 
-      expect(notifier.state.cronTasks.length, equals(1));
-      expect(notifier.state.cronTasks.first.name, equals('Daily Backup'));
+      expect(notifier.state.cronTasks.length, equals(before + 1));
+      expect(notifier.state.cronTasks.last.name, equals('Daily Backup'));
     });
 
-    test('toggleCronTask toggles enabled state', () {
-      final task = CronTask(
+    test('toggleCronTask flips enabled state', () {
+      notifier.addCronTask(CronTask(
         id: 'cron-toggle',
-        name: 'Toggle Test',
-        cronExpression: '*/5 * * * *',
-        command: 'test.sh',
-        args: {},
+        name: 'Toggle',
+        expression: '*/5 * * * *',
+        description: 'T',
         enabled: true,
-        lastRun: null,
-        nextRun: DateTime.now(),
-        createdAt: DateTime.now(),
-      );
+      ));
 
-      notifier.addCronTask(task);
       notifier.toggleCronTask('cron-toggle', false);
-
-      expect(notifier.state.cronTasks.first.enabled, isFalse);
+      expect(
+        notifier.state.cronTasks.firstWhere((t) => t.id == 'cron-toggle').enabled,
+        isFalse,
+      );
     });
 
-    test('executeCronTask updates lastRun', () {
-      final task = CronTask(
+    test('executeCronTask records a lastRun', () {
+      notifier.addCronTask(CronTask(
         id: 'cron-exec',
-        name: 'Exec Test',
-        cronExpression: '0 * * * *',
-        command: 'hourly.sh',
-        args: {},
+        name: 'Exec',
+        expression: '0 * * * *',
+        description: 'E',
         enabled: true,
-        lastRun: null,
-        nextRun: DateTime.now(),
-        createdAt: DateTime.now(),
-      );
+      ));
 
-      notifier.addCronTask(task);
-      final runTime = DateTime.now();
       notifier.executeCronTask('cron-exec');
 
-      expect(notifier.state.cronTasks.first.lastRun, isNotNull);
+      final executed = notifier.state.cronTasks
+          .firstWhere((t) => t.id == 'cron-exec');
+      expect(executed.lastRun, isNotNull);
     });
   });
 
   group('AppState — Notifications', () {
-    test('addNotification appends to list', () {
+    test('pushNotification appends to the list', () {
+      final before = notifier.state.notifications.length;
       final notification = AppNotification(
         id: 'notif-1',
-        title: 'Test Title',
-        body: 'Test Body',
+        title: 'Test',
+        body: 'Body',
         type: 'info',
+        timestamp: DateTime.now(),
         read: false,
-        createdAt: DateTime.now(),
       );
 
-      notifier.addNotification(notification);
+      notifier.pushNotification(notification);
 
-      expect(notifier.state.notifications.length, equals(1));
+      expect(notifier.state.notifications.length, equals(before + 1));
     });
 
-    test('markNotificationRead updates read flag', () {
-      final notification = AppNotification(
+    test('markNotificationRead flips the read flag', () {
+      notifier.pushNotification(AppNotification(
         id: 'notif-read',
         title: 'Unread',
         body: 'Body',
         type: 'warning',
+        timestamp: DateTime.now(),
         read: false,
-        createdAt: DateTime.now(),
-      );
+      ));
 
-      notifier.addNotification(notification);
       notifier.markNotificationRead('notif-read');
 
-      expect(notifier.state.notifications.first.read, isTrue);
+      final marked = notifier.state.notifications
+          .firstWhere((n) => n.id == 'notif-read');
+      expect(marked.read, isTrue);
     });
 
-    test('dismissNotification removes from list', () {
-      final notification = AppNotification(
+    test('dismissNotification removes from the list', () {
+      notifier.pushNotification(AppNotification(
         id: 'notif-dismiss',
-        title: 'Dismiss Me',
+        title: 'Dismiss',
         body: 'Body',
         type: 'info',
+        timestamp: DateTime.now(),
         read: false,
-        createdAt: DateTime.now(),
-      );
+      ));
 
-      notifier.addNotification(notification);
       notifier.dismissNotification('notif-dismiss');
 
-      expect(notifier.state.notifications, isEmpty);
+      expect(
+        notifier.state.notifications.any((n) => n.id == 'notif-dismiss'),
+        isFalse,
+      );
     });
 
     test('clearNotifications removes all', () {
       for (var i = 0; i < 5; i++) {
-        notifier.addNotification(AppNotification(
+        notifier.pushNotification(AppNotification(
           id: 'n$i',
           title: 'Title $i',
-          body: 'Body $i',
+          body: 'Body',
           type: 'info',
+          timestamp: DateTime.now(),
           read: false,
-          createdAt: DateTime.now(),
         ));
       }
 
@@ -343,7 +302,7 @@ void main() {
   });
 
   group('AppState — Profile', () {
-    test('updateProfile replaces profile', () {
+    test('updateProfile replaces the profile', () {
       final newProfile = AgentProfile(
         id: 'new-id',
         name: 'Updated Agent',
