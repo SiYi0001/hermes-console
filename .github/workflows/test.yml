@@ -69,7 +69,7 @@ jobs:
         run: flutter build apk --debug
 
       - name: 上传 APK / Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hermes-console-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
@@ -110,7 +110,7 @@ jobs:
         run: flutter build web
 
       - name: 上传构建产物 / Upload build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hermes-console-web
           path: build/web/
