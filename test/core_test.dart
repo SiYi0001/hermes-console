@@ -7,6 +7,7 @@ void main() {
 
     setUp(() {
       handler = AppErrorHandler();
+      handler.clearLog(); // isolate each test against the singleton log
     });
 
     test('should log errors', () {
