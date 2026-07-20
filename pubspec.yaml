@@ -23,7 +23,7 @@ dependencies:
   pointycastle: ^3.7.4
   
   # Compression
-  archive: ^3.4.10
+  archive: ^4.0.9
   
   # Local Storage
   hive: ^2.2.3
