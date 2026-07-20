@@ -15,7 +15,7 @@ dependencies:
   riverpod_annotation: ^2.3.3
   
   # P2P & Network
-  flutter_webrtc: ^0.9.4
+  flutter_webrtc: ^0.11.6+hotfix.1
   connectivity_plus: ^5.0.2
   
   # Cryptography & Security
