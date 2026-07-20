@@ -20,7 +20,7 @@ dependencies:
   
   # Cryptography & Security
   cryptography: ^2.7.0
-  pointycastle: ^3.7.4
+  pointycastle: ^4.0.0
   
   # Compression
   archive: ^3.4.10
