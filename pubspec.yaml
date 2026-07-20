@@ -31,7 +31,7 @@ dependencies:
   
   # UI Components
   flutter_animate: ^4.5.0
-  google_fonts: ^6.1.0
+  google_fonts: ^8.2.0
   flutter_svg: ^2.0.9
   qr_flutter: ^4.1.0
   mobile_scanner: ^4.0.1
