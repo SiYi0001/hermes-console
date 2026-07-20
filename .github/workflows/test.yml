@@ -44,7 +44,7 @@ jobs:
         run: flutter test --no-pub
 
       - name: 上传覆盖率 / Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         if: success()
         with:
           files: ./coverage/lcov.info
