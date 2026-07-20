@@ -16,7 +16,7 @@ dependencies:
   
   # P2P & Network
   flutter_webrtc: ^0.9.4
-  connectivity_plus: ^5.0.2
+  connectivity_plus: ^7.3.0
   
   # Cryptography & Security
   cryptography: ^2.7.0
