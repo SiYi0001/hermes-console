@@ -42,7 +42,7 @@ class HermesProtocol {
   /// Decode bytes to a protocol message
   ProtocolMessage decode(Uint8List data) {
     if (data.length < headerSize) {
-      throw FormatException('Invalid frame: too short');
+      throw const FormatException('Invalid frame: too short');
     }
     
     // Parse header
@@ -56,7 +56,7 @@ class HermesProtocol {
     final length = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
     
     if (data.length < headerSize + length) {
-      throw FormatException('Invalid frame: payload truncated');
+      throw const FormatException('Invalid frame: payload truncated');
     }
     
     final payload = data.sublist(headerSize, headerSize + length);

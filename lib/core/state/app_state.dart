@@ -322,7 +322,7 @@ AppState _seed() {
         lastUsed: now.subtract(const Duration(days: 1)),
       ),
     ],
-    builtInTools: [
+    builtInTools: const [
       ToolItem(name: 'terminal', description: 'Execute shell commands', category: 'System', enabled: true, usageCount: 156),
       ToolItem(name: 'read_file', description: 'Read file contents', category: 'File', enabled: true, usageCount: 234),
       ToolItem(name: 'write_file', description: 'Create or update files', category: 'File', enabled: true, usageCount: 89),
@@ -355,7 +355,7 @@ AppState _seed() {
         lastRun: now.subtract(const Duration(days: 3)),
         lastStatus: 'success',
       ),
-      CronTask(
+      const CronTask(
         id: 'c3',
         name: 'Token usage report',
         expression: '0 18 * * *',
@@ -363,7 +363,7 @@ AppState _seed() {
         enabled: false,
       ),
     ],
-    gatewayChannels: [
+    gatewayChannels: const [
       GatewayChannel(id: 'g1', name: 'WeChat', icon: Icons.chat, connected: true),
       GatewayChannel(id: 'g2', name: 'QQ', icon: Icons.chat_bubble, connected: true),
       GatewayChannel(id: 'g3', name: 'Telegram', icon: Icons.send, connected: false),

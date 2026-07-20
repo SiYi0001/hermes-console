@@ -132,10 +132,10 @@ class _NotificationStats extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [HermesTheme.primaryBlue.withOpacity(0.15), HermesTheme.secondaryPurple.withOpacity(0.1)],
+          colors: [HermesTheme.primaryBlue.withValues(alpha: 0.15), HermesTheme.secondaryPurple.withValues(alpha: 0.1)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: HermesTheme.primaryBlue.withOpacity(0.2)),
+        border: Border.all(color: HermesTheme.primaryBlue.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -221,22 +221,22 @@ class _NotificationCard extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(color: HermesTheme.errorRed.withOpacity(0.3), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: HermesTheme.errorRed.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
         child: const Icon(Icons.delete, color: HermesTheme.errorRed),
       ),
       onDismissed: (_) => onDismiss(notification.id),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: notification.read ? HermesTheme.surfaceDark.withOpacity(0.5) : HermesTheme.surfaceDark,
+          color: notification.read ? HermesTheme.surfaceDark.withValues(alpha: 0.5) : HermesTheme.surfaceDark,
           borderRadius: BorderRadius.circular(12),
-          border: notification.read ? null : Border.all(color: color.withOpacity(0.2)),
+          border: notification.read ? null : Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: ListTile(
           contentPadding: const EdgeInsets.all(12),
           leading: Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: color, size: 22),
           ),
           title: Row(
@@ -262,7 +262,7 @@ class _NotificationCard extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
                     child: Text(_priorityText(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
                   ),
                   const SizedBox(width: 8),

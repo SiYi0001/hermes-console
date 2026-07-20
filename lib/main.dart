@@ -1,8 +1,6 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 
 import 'shared/theme/hermes_theme.dart';
@@ -181,7 +179,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: HermesTheme.primaryBlue.withOpacity(0.4),
+                      color: HermesTheme.primaryBlue.withValues(alpha: 0.4),
                       blurRadius: 40,
                       spreadRadius: 10,
                     ),
@@ -195,7 +193,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
               const SizedBox(height: 32),
               ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
+                shaderCallback: (bounds) => const LinearGradient(
                   colors: [
                     HermesTheme.primaryBlue,
                     HermesTheme.secondaryPurple,
@@ -224,7 +222,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 child: LinearProgressIndicator(
                   backgroundColor: HermesTheme.surfaceDark,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    HermesTheme.primaryBlue.withOpacity(0.7),
+                    HermesTheme.primaryBlue.withValues(alpha: 0.7),
                   ),
                 ),
               ),
@@ -293,7 +291,7 @@ class _MainNavigationState extends State<MainNavigation> {
         color: HermesTheme.surfaceDark,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -315,7 +313,7 @@ class _MainNavigationState extends State<MainNavigation> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? HermesTheme.primaryBlue.withOpacity(0.15)
+                        ? HermesTheme.primaryBlue.withValues(alpha: 0.15)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -536,10 +534,10 @@ class _MainNavigationState extends State<MainNavigation> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: HermesTheme.successGreen.withOpacity(0.1),
+                  color: HermesTheme.successGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: HermesTheme.successGreen.withOpacity(0.3),
+                    color: HermesTheme.successGreen.withValues(alpha: 0.3),
                   ),
                 ),
                 child: const Row(
@@ -624,7 +622,7 @@ class _DrawerItem extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: HermesTheme.primaryBlue.withOpacity(0.2),
+                color: HermesTheme.primaryBlue.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

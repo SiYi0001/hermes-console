@@ -103,10 +103,10 @@ class _ProfileHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [HermesTheme.primaryBlue.withOpacity(0.12), HermesTheme.secondaryPurple.withOpacity(0.08)],
+          colors: [HermesTheme.primaryBlue.withValues(alpha: 0.12), HermesTheme.secondaryPurple.withValues(alpha: 0.08)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: HermesTheme.primaryBlue.withOpacity(0.15)),
+        border: Border.all(color: HermesTheme.primaryBlue.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -125,7 +125,7 @@ class _ProfileHeader extends StatelessWidget {
                 right: 0,
                 child: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: HermesTheme.primaryBlue, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: HermesTheme.primaryBlue, shape: BoxShape.circle),
                   child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
                 ),
               ),
@@ -139,7 +139,7 @@ class _ProfileHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [HermesTheme.primaryBlue, HermesTheme.secondaryPurple]),
+              gradient: const LinearGradient(colors: [HermesTheme.primaryBlue, HermesTheme.secondaryPurple]),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -201,7 +201,7 @@ class _StatRow extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
@@ -364,9 +364,9 @@ class _IdentityChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -406,14 +406,14 @@ class _SecurityCard extends StatelessWidget {
             icon: Icons.phonelink_lock,
             title: 'Two-Factor Authentication',
             subtitle: 'Require 2FA for all logins',
-            trailing: Switch(value: twoFactorEnabled, onChanged: onToggle2FA, activeColor: HermesTheme.primaryBlue),
+            trailing: Switch(value: twoFactorEnabled, onChanged: onToggle2FA, activeThumbColor: HermesTheme.primaryBlue),
           ),
           const Divider(color: HermesTheme.surfaceOverlay, height: 1),
           _SettingsTile(
             icon: Icons.login,
             title: 'Login Alerts',
             subtitle: 'Get notified on new login attempts',
-            trailing: Switch(value: loginAlertsEnabled, onChanged: onToggleLoginAlerts, activeColor: HermesTheme.primaryBlue),
+            trailing: Switch(value: loginAlertsEnabled, onChanged: onToggleLoginAlerts, activeThumbColor: HermesTheme.primaryBlue),
           ),
           const Divider(color: HermesTheme.surfaceOverlay, height: 1),
           _SettingsTile(
@@ -484,7 +484,7 @@ class _SettingsTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: HermesTheme.primaryBlue.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: HermesTheme.primaryBlue.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
         child: Icon(icon, color: HermesTheme.primaryBlue, size: 20),
       ),
       title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
@@ -683,7 +683,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: HermesTheme.primaryBlue, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(color: HermesTheme.primaryBlue, shape: BoxShape.circle),
                     child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
                   ),
                 ),

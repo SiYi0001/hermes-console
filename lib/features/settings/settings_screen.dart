@@ -32,7 +32,7 @@ class SettingsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Security Section
-            _SectionHeader(title: 'Security'),
+            const _SectionHeader(title: 'Security'),
             const SizedBox(height: 12),
             _SettingsCard(
               children: [
@@ -65,7 +65,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Network Section
-            _SectionHeader(title: 'Network'),
+            const _SectionHeader(title: 'Network'),
             const SizedBox(height: 12),
             _SettingsCard(
               children: [
@@ -101,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Compression Section
-            _SectionHeader(title: 'Data'),
+            const _SectionHeader(title: 'Data'),
             const SizedBox(height: 12),
             _SettingsCard(
               children: [
@@ -118,7 +118,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Firewall Section
-            _SectionHeader(title: 'Firewall'),
+            const _SectionHeader(title: 'Firewall'),
             const SizedBox(height: 12),
             _SettingsCard(
               children: [
@@ -142,7 +142,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Appearance Section
-            _SectionHeader(title: 'Appearance'),
+            const _SectionHeader(title: 'Appearance'),
             const SizedBox(height: 12),
             _SettingsCard(
               children: [
@@ -166,17 +166,17 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // About Section
-            _SectionHeader(title: 'About'),
+            const _SectionHeader(title: 'About'),
             const SizedBox(height: 12),
             _SettingsCard(
               children: [
-                _InfoTile(
+                const _InfoTile(
                   icon: Icons.info_outline_rounded,
                   title: 'Version',
                   value: appVersion,
                 ),
                 const Divider(color: HermesTheme.surfaceOverlay, height: 1),
-                _InfoTile(
+                const _InfoTile(
                   icon: Icons.code_rounded,
                   title: 'Protocol',
                   value: 'Hermes v2.0.0',
@@ -209,7 +209,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Danger Zone
-            _SectionHeader(title: 'Danger Zone', isDestructive: true),
+            const _SectionHeader(title: 'Danger Zone', isDestructive: true),
             const SizedBox(height: 12),
             _SettingsCard(
               children: [
@@ -402,7 +402,7 @@ class _SwitchTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: HermesTheme.primaryBlue.withOpacity(0.15),
+              color: HermesTheme.primaryBlue.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -471,7 +471,7 @@ class _ActionTile extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: (isDestructive ? HermesTheme.errorRed : HermesTheme.primaryBlue)
-                    .withOpacity(0.15),
+                    .withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -505,7 +505,7 @@ class _ActionTile extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: HermesTheme.textSecondary.withOpacity(0.5),
+              color: HermesTheme.textSecondary.withValues(alpha: 0.5),
             ),
           ],
         ),
@@ -534,7 +534,7 @@ class _InfoTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: HermesTheme.textSecondary.withOpacity(0.15),
+              color: HermesTheme.textSecondary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -608,16 +608,20 @@ class _TimeoutPickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          ...options.map((value) => RadioListTile<int>(
-            value: value,
+          RadioGroup<int>(
             groupValue: currentValue,
             onChanged: (v) => onChanged(v!),
-            title: Text(
-              '$value $label',
-              style: const TextStyle(color: Colors.white),
+            child: Column(
+              children: options.map((value) => RadioListTile<int>(
+                value: value,
+                title: Text(
+                  '$value $label',
+                  style: const TextStyle(color: Colors.white),
+                ),
+                activeColor: HermesTheme.primaryBlue,
+              )).toList(),
             ),
-            activeColor: HermesTheme.primaryBlue,
-          )),
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -715,7 +719,7 @@ class _ServerListSheetState extends State<_ServerListSheet> {
               Expanded(
                 child: TextField(
                   controller: _controller,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'stun:stun.example.com:3478',
                     isDense: true,
                   ),

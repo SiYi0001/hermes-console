@@ -54,9 +54,11 @@ void main() {
       final cb = CircuitBreaker(failureThreshold: 3);
 
       for (var i = 0; i < 3; i++) {
-        await cb.execute(() async {
-          throw Exception('Error');
-        }).catchError((_) {});
+        try {
+          await cb.execute(() async {
+            throw Exception('Error');
+          });
+        } catch (_) {}
       }
 
       expect(cb.state, CircuitState.open);
@@ -65,9 +67,11 @@ void main() {
     test('should allow success after reset', () async {
       final cb = CircuitBreaker(failureThreshold: 1);
 
-      await cb.execute(() async {
-        throw Exception('Error');
-      }).catchError((_) {});
+      try {
+        await cb.execute(() async {
+          throw Exception('Error');
+        });
+      } catch (_) {}
 
       expect(cb.state, CircuitState.open);
 
@@ -112,8 +116,7 @@ void main() {
 
   group('RetryStrategy', () {
     test('should attempt retries', () async {
-      final strategy = RetryStrategy(maxRetries: 3, delay: Duration(milliseconds: 10));
-      var attempts = 0;
+      final strategy = RetryStrategy(maxRetries: 3, delay: const Duration(milliseconds: 10));
 
       await strategy.tryRecover(Exception('test'));
       expect(strategy.maxAttempts, 3);

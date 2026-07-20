@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/models.dart';
 import '../../core/state/app_state.dart';
-import '../../core/utils/utils.dart';
 import '../../shared/theme/hermes_theme.dart';
 
 /// Memory Management Screen - Hermes Long-term Memory System
@@ -162,12 +161,12 @@ class _MemorySummaryCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            HermesTheme.primaryBlue.withOpacity(0.2),
-            HermesTheme.secondaryPurple.withOpacity(0.1),
+            HermesTheme.primaryBlue.withValues(alpha: 0.2),
+            HermesTheme.secondaryPurple.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: HermesTheme.primaryBlue.withOpacity(0.3)),
+        border: Border.all(color: HermesTheme.primaryBlue.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +176,7 @@ class _MemorySummaryCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: HermesTheme.primaryBlue.withOpacity(0.2),
+                  color: HermesTheme.primaryBlue.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.psychology_rounded, color: HermesTheme.primaryBlue, size: 24),
@@ -243,7 +242,7 @@ class _MemoryCard extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: _getCategoryColor(memory.category).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(color: _getCategoryColor(memory.category).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
           child: Icon(_getCategoryIcon(memory.category), color: _getCategoryColor(memory.category), size: 20),
         ),
         title: Text(memory.title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
@@ -376,7 +375,7 @@ class _SkillCard extends StatelessWidget {
                     Container(
                       margin: const EdgeInsets.only(top: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: HermesTheme.primaryBlue.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+                      decoration: BoxDecoration(color: HermesTheme.primaryBlue.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
                       child: Text(skill.category, style: const TextStyle(fontSize: 10, color: HermesTheme.primaryBlue)),
                     ),
                   ],
@@ -416,11 +415,11 @@ class _ContextTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return const SingleChildScrollView(
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           _ContextSummaryCard(),
           SizedBox(height: 16),
           _ActiveContextCard(),
@@ -438,14 +437,14 @@ class _ContextSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: HermesTheme.surfaceDark, borderRadius: BorderRadius.circular(16)),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Context Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 16),
+            Text('Context Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: const [
+              children: [
                 _ContextStat(icon: Icons.article, label: 'Tokens', value: '12.4K'),
                 _ContextStat(icon: Icons.folder, label: 'Files', value: '8'),
                 _ContextStat(icon: Icons.history, label: 'History', value: '45'),
@@ -548,7 +547,7 @@ class _ContextVariablesCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const _EnvVarRow(name: 'NODE_ENV', value: 'development'),
-            _EnvVarRow(name: 'API_URL', value: AppConfig.apiUrl),
+            const _EnvVarRow(name: 'API_URL', value: AppConfig.apiUrl),
             const _EnvVarRow(name: 'DEBUG', value: 'true'),
           ],
         ),
@@ -566,7 +565,7 @@ class _EnvVarRow extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: HermesTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(color: HermesTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
               child: Text(name, style: HermesTheme.codeStyle.copyWith(fontSize: 12, color: HermesTheme.primaryBlue)),
             ),
             const SizedBox(width: 12),

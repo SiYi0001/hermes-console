@@ -108,15 +108,15 @@ class AccessibilityHelper {
 /// Screen reader announcements
 class ScreenReaderAnnouncer {
   static void announce(BuildContext context, String message) {
-    SemanticsService.announce(message, TextDirection.ltr);
+    SemanticsService.sendAnnouncement(View.of(context), message, TextDirection.ltr);
   }
 
   static void announceError(BuildContext context, String message) {
-    SemanticsService.announce('Error: $message', TextDirection.ltr);
+    SemanticsService.sendAnnouncement(View.of(context), 'Error: $message', TextDirection.ltr);
   }
 
   static void announceSuccess(BuildContext context, String message) {
-    SemanticsService.announce('Success: $message', TextDirection.ltr);
+    SemanticsService.sendAnnouncement(View.of(context), 'Success: $message', TextDirection.ltr);
   }
 }
 
@@ -166,7 +166,7 @@ class TextScaleUtils {
     double minScale = 0.8,
     double maxScale = 2.0,
   }) {
-    final scale = MediaQuery.textScaleFactorOf(context);
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
     return baseFontSize * scale.clamp(minScale, maxScale);
   }
 
@@ -203,24 +203,24 @@ class KeyboardNavigationHelper {
     FocusScope.of(context).unfocus();
   }
 
-  static bool isTabPressed(RawKeyEvent event) {
-    return event is RawKeyDownEvent &&
+  static bool isTabPressed(KeyEvent event) {
+    return event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.tab;
   }
 
-  static bool isEscapePressed(RawKeyEvent event) {
-    return event is RawKeyDownEvent &&
+  static bool isEscapePressed(KeyEvent event) {
+    return event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape;
   }
 
-  static bool isEnterPressed(RawKeyEvent event) {
-    return event is RawKeyDownEvent &&
+  static bool isEnterPressed(KeyEvent event) {
+    return event is KeyDownEvent &&
         (event.logicalKey == LogicalKeyboardKey.enter ||
             event.logicalKey == LogicalKeyboardKey.numpadEnter);
   }
 
-  static bool isArrowKey(RawKeyEvent event) {
-    if (event is! RawKeyDownEvent) return false;
+  static bool isArrowKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
     final key = event.logicalKey;
     return key == LogicalKeyboardKey.arrowUp ||
         key == LogicalKeyboardKey.arrowDown ||

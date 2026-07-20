@@ -22,7 +22,6 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
   final _portController = TextEditingController(text: '8080');
 
   bool _showQrScanner = false;
-  bool _showQrCode = false;
 
   @override
   void initState() {
@@ -92,7 +91,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: HermesTheme.surfaceDark.withOpacity(0.9),
+                      color: HermesTheme.surfaceDark.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Row(
@@ -142,7 +141,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
                 color: HermesTheme.surfaceDark,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: HermesTheme.primaryBlue.withOpacity(0.3),
+                  color: HermesTheme.primaryBlue.withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
@@ -307,7 +306,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: HermesTheme.successGreen.withOpacity(0.15),
+                      color: HermesTheme.successGreen.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -362,7 +361,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: HermesTheme.primaryBlue.withOpacity(0.2),
+                    color: HermesTheme.primaryBlue.withValues(alpha: 0.2),
                     blurRadius: 30,
                     spreadRadius: 5,
                   ),

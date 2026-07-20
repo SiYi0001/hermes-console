@@ -38,7 +38,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           color: HermesTheme.surfaceDark,
           border: Border(
             top: BorderSide(
-              color: HermesTheme.surfaceOverlay.withOpacity(0.5),
+              color: HermesTheme.surfaceOverlay.withValues(alpha: 0.5),
               width: 0.5,
             ),
           ),
@@ -72,7 +72,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? HermesTheme.primaryBlue.withOpacity(0.15)
+              ? HermesTheme.primaryBlue.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -149,7 +149,7 @@ class HomeTab extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: HermesTheme.primaryBlue.withOpacity(0.3),
+                                  color: HermesTheme.primaryBlue.withValues(alpha: 0.3),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -177,7 +177,7 @@ class HomeTab extends ConsumerWidget {
                                 'Secure Agent Control',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                               ),
                             ],
@@ -310,7 +310,6 @@ class _ConnectionStatusCard extends StatelessWidget {
         statusIcon = Icons.error_rounded;
         break;
       case ConnectionState.disconnected:
-      default:
         statusColor = HermesTheme.textSecondary;
         statusText = 'Disconnected';
         statusIcon = Icons.link_off_rounded;
@@ -323,13 +322,13 @@ class _ConnectionStatusCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            statusColor.withOpacity(0.2),
-            statusColor.withOpacity(0.05),
+            statusColor.withValues(alpha: 0.2),
+            statusColor.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -338,7 +337,7 @@ class _ConnectionStatusCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.2),
+              color: statusColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -418,10 +417,10 @@ class _QuickActionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -463,7 +462,7 @@ class _SessionCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: HermesTheme.primaryBlue.withOpacity(0.15),
+              color: HermesTheme.primaryBlue.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -486,7 +485,7 @@ class _SessionCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  session.peerId.substring(0, 8) + '...',
+                  '${session.peerId.substring(0, 8)}...',
                   style: const TextStyle(
                     fontSize: 12,
                     color: HermesTheme.textSecondary,
@@ -497,7 +496,7 @@ class _SessionCard extends StatelessWidget {
           ),
           Icon(
             Icons.chevron_right_rounded,
-            color: HermesTheme.textSecondary.withOpacity(0.5),
+            color: HermesTheme.textSecondary.withValues(alpha: 0.5),
           ),
         ],
       ),
@@ -523,7 +522,7 @@ class _EmptySessionsCard extends StatelessWidget {
           Icon(
             Icons.folder_open_rounded,
             size: 48,
-            color: HermesTheme.textSecondary.withOpacity(0.5),
+            color: HermesTheme.textSecondary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 12),
           const Text(

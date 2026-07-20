@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -71,15 +73,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _finish() async {
     await ref.read(settingsProvider.notifier).completeOnboarding();
     if (mounted) {
-      Navigator.of(context).pushReplacement(
+      unawaited(Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: widget.nextScreenBuilder),
-      );
+      ));
     }
   }
 
   void _next() {
     if (_isLast) {
-      _finish();
+      unawaited(_finish());
     } else {
       _controller.nextPage(
         duration: const Duration(milliseconds: 320),
@@ -175,8 +177,8 @@ class _OnboardPageView extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  page.accent.withOpacity(0.30),
-                  page.accent.withOpacity(0.04),
+                  page.accent.withValues(alpha: 0.30),
+                  page.accent.withValues(alpha: 0.04),
                 ],
               ),
             ),
@@ -195,7 +197,7 @@ class _OnboardPageView extends StatelessWidget {
             page.body,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.textTheme.bodyLarge?.color?.withOpacity(0.7),
+              color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
               height: 1.5,
             ),
           ),
@@ -225,7 +227,7 @@ class _PageIndicator extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive
                 ? HermesTheme.primaryBlue
-                : HermesTheme.primaryBlue.withOpacity(0.3),
+                : HermesTheme.primaryBlue.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(4),
           ),
         );

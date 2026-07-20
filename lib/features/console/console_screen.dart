@@ -17,7 +17,6 @@ class _ConsoleScreenState extends ConsumerState<ConsoleScreen> {
   final _focusNode = FocusNode();
 
   final List<ConsoleEntry> _entries = [];
-  bool _isConnected = false;
 
   @override
   void initState() {
@@ -394,7 +393,7 @@ class _ConnectionStatusBar extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: statusColor.withOpacity(0.5),
+                  color: statusColor.withValues(alpha: 0.5),
                   blurRadius: 6,
                   spreadRadius: 2,
                 ),
@@ -414,9 +413,9 @@ class _ConnectionStatusBar extends StatelessWidget {
           const Spacer(),
           if (state == ConnectionState.connected ||
               state == ConnectionState.authenticated) ...[
-            _StatusChip(icon: Icons.lock, label: 'Encrypted'),
+            const _StatusChip(icon: Icons.lock, label: 'Encrypted'),
             const SizedBox(width: 8),
-            _StatusChip(icon: Icons.compress, label: 'Compressed'),
+            const _StatusChip(icon: Icons.compress, label: 'Compressed'),
           ],
         ],
       ),
@@ -464,7 +463,6 @@ class _ConsoleEntryWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color textColor;
-    Color? bgColor;
 
     switch (entry.type) {
       case ConsoleEntryType.input:
@@ -514,7 +512,7 @@ class _ConsoleInputArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: HermesTheme.surfaceDark,
         border: Border(
           top: BorderSide(
@@ -531,8 +529,8 @@ class _ConsoleInputArea extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isConnected
-                    ? HermesTheme.successGreen.withOpacity(0.15)
-                    : HermesTheme.errorRed.withOpacity(0.15),
+                    ? HermesTheme.successGreen.withValues(alpha: 0.15)
+                    : HermesTheme.errorRed.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -560,7 +558,7 @@ class _ConsoleInputArea extends StatelessWidget {
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
                   hintStyle: TextStyle(
-                    color: HermesTheme.textSecondary.withOpacity(0.5),
+                    color: HermesTheme.textSecondary.withValues(alpha: 0.5),
                   ),
                 ),
                 style: HermesTheme.codeStyle,
@@ -575,7 +573,7 @@ class _ConsoleInputArea extends StatelessWidget {
                 Icons.send_rounded,
                 color: isConnected
                     ? HermesTheme.primaryBlue
-                    : HermesTheme.textSecondary.withOpacity(0.5),
+                    : HermesTheme.textSecondary.withValues(alpha: 0.5),
               ),
             ),
           ],

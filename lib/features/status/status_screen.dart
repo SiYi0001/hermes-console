@@ -214,13 +214,13 @@ class _ConnectionOverviewCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            statusColor.withOpacity(0.15),
-            statusColor.withOpacity(0.05),
+            statusColor.withValues(alpha: 0.15),
+            statusColor.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -231,7 +231,7 @@ class _ConnectionOverviewCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
+                  color: statusColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(statusIcon, color: statusColor, size: 28),
@@ -345,7 +345,7 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -384,7 +384,7 @@ class _SecurityInfoCard extends StatelessWidget {
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
+      child: const Column(
         children: [
           _SecurityRow(
             icon: Icons.lock_rounded,
@@ -392,28 +392,28 @@ class _SecurityInfoCard extends StatelessWidget {
             value: 'AES-256-GCM',
             enabled: true,
           ),
-          const Divider(color: HermesTheme.surfaceOverlay, height: 24),
+          Divider(color: HermesTheme.surfaceOverlay, height: 24),
           _SecurityRow(
             icon: Icons.key_rounded,
             label: 'Key Exchange',
             value: 'Curve25519',
             enabled: true,
           ),
-          const Divider(color: HermesTheme.surfaceOverlay, height: 24),
+          Divider(color: HermesTheme.surfaceOverlay, height: 24),
           _SecurityRow(
             icon: Icons.compress_rounded,
             label: 'Compression',
             value: 'Zstandard',
             enabled: true,
           ),
-          const Divider(color: HermesTheme.surfaceOverlay, height: 24),
+          Divider(color: HermesTheme.surfaceOverlay, height: 24),
           _SecurityRow(
             icon: Icons.verified_user_rounded,
             label: 'Message Auth',
             value: 'Poly1305 MAC',
             enabled: true,
           ),
-          const Divider(color: HermesTheme.surfaceOverlay, height: 24),
+          Divider(color: HermesTheme.surfaceOverlay, height: 24),
           _SecurityRow(
             icon: Icons.sync_alt_rounded,
             label: 'Transport',
@@ -486,20 +486,20 @@ class _IceCandidatesCard extends StatelessWidget {
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
+      child: const Column(
         children: [
           _IceCandidateRow(
             type: 'srflx',
             detail: '203.0.113.1:54321',
             status: 'Active',
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _IceCandidateRow(
             type: 'host',
             detail: '192.168.1.100:45678',
             status: 'Active',
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _IceCandidateRow(
             type: 'relay',
             detail: 'turn.example.com:3478',
@@ -544,7 +544,7 @@ class _IceCandidateRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: typeColor.withOpacity(0.15),
+            color: typeColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
@@ -566,7 +566,7 @@ class _IceCandidateRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: HermesTheme.successGreen.withOpacity(0.15),
+            color: HermesTheme.successGreen.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
@@ -671,7 +671,6 @@ class _LogEntry extends StatelessWidget {
         icon = Icons.error_outline;
         break;
       case LogType.info:
-      default:
         color = HermesTheme.accentCyan;
         icon = Icons.info_outline;
     }
@@ -680,7 +679,7 @@ class _LogEntry extends StatelessWidget {
       children: [
         Text(
           time,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 11,
             fontFamily: 'JetBrainsMono',
             color: HermesTheme.textSecondary,

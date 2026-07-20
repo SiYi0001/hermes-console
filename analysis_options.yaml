@@ -7,7 +7,6 @@ linter:
     - avoid_empty_else
     - avoid_print: false          # 开发时允许 print
     - avoid_relative_lib_imports
-    - avoid_returning_null_for_future
     - avoid_slow_async_io
     - avoid_type_to_string
     - avoid_types_as_parameter_names
@@ -61,7 +60,6 @@ linter:
     - slash_for_doc_comments
     - type_init_formals
     - unawaited_futures
-    - unnecessary.await_in_tail
     - unnecessary_brace_in_string_interps
     - unnecessary_const
     - unnecessary_getters_setters

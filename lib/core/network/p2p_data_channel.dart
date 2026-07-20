@@ -158,7 +158,7 @@ class P2PDataChannelManager {
     final compressed = _compressionService.compress(encoded);
     final encrypted = await _cryptoService.encrypt(compressed);
     
-    _dataChannel!.send(RTCDataChannelMessage.fromBinary(encrypted));
+    await _dataChannel!.send(RTCDataChannelMessage.fromBinary(encrypted));
   }
 
   /// Send raw bytes
@@ -166,7 +166,7 @@ class P2PDataChannelManager {
     if (_dataChannel?.state != RTCDataChannelState.RTCDataChannelOpen) {
       throw StateError('Data channel not open');
     }
-    _dataChannel!.send(RTCDataChannelMessage.fromBinary(data));
+    await _dataChannel!.send(RTCDataChannelMessage.fromBinary(data));
   }
 
   /// Disconnect
@@ -181,10 +181,8 @@ class P2PDataChannelManager {
 
   void _setupPeerConnectionHandlers() {
     _peerConnection!.onIceCandidate = (candidate) {
-      if (candidate != null) {
-        final candidateData = _encodeIceCandidate(candidate);
-        _rawDataController.add(candidateData);
-      }
+      final candidateData = _encodeIceCandidate(candidate);
+      _rawDataController.add(candidateData);
     };
 
     _peerConnection!.onConnectionState = (state) {
@@ -385,7 +383,6 @@ final connectionMetricsProvider =
 class ConnectionMetricsNotifier extends StateNotifier<ConnectionMetrics> {
   ConnectionMetricsNotifier() : super(const ConnectionMetrics.empty());
 
-  void set(ConnectionMetrics metrics) => state = metrics;
   void reset() => state = const ConnectionMetrics.empty();
   void update(ConnectionMetrics Function(ConnectionMetrics) f) =>
       state = f(state);
@@ -441,30 +438,24 @@ class ConnectionStateNotifier extends StateNotifier<ConnectionState> {
       _ref.read(connectionMetricsProvider.notifier);
   ActivityLogNotifier get _log => _ref.read(activityLogProvider.notifier);
 
-  /// Low-level transport hook (used by [P2PDataChannelManager]); kept for
-  /// backward compatibility. Prefer [connect]/[disconnect] for UI flows.
-  void updateState(ConnectionState newState) {
-    state = newState;
-  }
-
   /// Begin connecting to [peerId]. Transitions to connected after the
   /// (simulated) handshake and starts the heartbeat.
   void connect(String peerId, {String? peerName}) {
     _cancelTimers();
     state = ConnectionState.connecting;
-    _metrics.set(ConnectionMetrics(peerId: peerId, peerName: peerName ?? peerId));
+    _metrics.state = ConnectionMetrics(peerId: peerId, peerName: peerName ?? peerId);
     _log.add('Connecting to $peerId', ActivityLevel.info);
 
     _connectTimer = Timer(const Duration(milliseconds: 1500), () {
       if (state != ConnectionState.connecting) return;
       final now = DateTime.now();
       state = ConnectionState.connected;
-      _metrics.set(ConnectionMetrics(
+      _metrics.state = ConnectionMetrics(
         peerId: peerId,
         peerName: peerName ?? peerId,
         connectedAt: now,
         latencyMs: 18 + _rng.nextInt(22),
-      ));
+      );
       _log.add('DTLS handshake complete', ActivityLevel.info);
       _log.add('Key exchange completed (Curve25519)', ActivityLevel.info);
       _log.add('Connection established', ActivityLevel.success);

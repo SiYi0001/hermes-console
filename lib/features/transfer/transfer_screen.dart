@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/models.dart';
 import '../../core/state/app_state.dart';
-import '../../core/utils/utils.dart';
 import '../../shared/theme/hermes_theme.dart';
 
 /// File Transfer Screen
@@ -131,9 +130,9 @@ class _TransferCard extends StatelessWidget {
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
         border: transfer.status == 'failed'
-            ? Border.all(color: HermesTheme.errorRed.withOpacity(0.3))
+            ? Border.all(color: HermesTheme.errorRed.withValues(alpha: 0.3))
             : transfer.status == 'completed'
-                ? Border.all(color: HermesTheme.successGreen.withOpacity(0.3))
+                ? Border.all(color: HermesTheme.successGreen.withValues(alpha: 0.3))
                 : null,
       ),
       child: Column(
@@ -143,7 +142,7 @@ class _TransferCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
                 child: Icon(_isUpload ? Icons.upload_file : Icons.download, color: color, size: 20),
               ),
               const SizedBox(width: 12),
@@ -157,7 +156,7 @@ class _TransferCard extends StatelessWidget {
                       children: [
                         Text(NetworkUtils.formatBytes(transfer.sizeBytes), style: const TextStyle(fontSize: 12, color: HermesTheme.textSecondary)),
                         const SizedBox(width: 8),
-                        Icon(Icons.people_alt, size: 12, color: HermesTheme.textTertiary),
+                        const Icon(Icons.people_alt, size: 12, color: HermesTheme.textTertiary),
                         const SizedBox(width: 4),
                         Text(transfer.peer, style: const TextStyle(fontSize: 12, color: HermesTheme.textTertiary)),
                       ],
@@ -265,7 +264,7 @@ class _StatusBadge extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -312,7 +311,7 @@ class _SharedFileCard extends StatelessWidget {
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
           child: Icon(isImage ? Icons.image : Icons.description, color: color, size: 20),
         ),
         title: Text(file.name, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),

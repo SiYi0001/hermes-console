@@ -71,7 +71,7 @@ class _ConnectionStatusIndicatorState extends State<ConnectionStatusIndicator>
             boxShadow: widget.isConnected
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.5),
+                      color: color.withValues(alpha: 0.5),
                       blurRadius: widget.size * _pulseAnimation.value,
                       spreadRadius: widget.size * 0.2,
                     ),
@@ -140,7 +140,7 @@ class _GradientButtonState extends State<GradientButton>
             ),
             boxShadow: [
               BoxShadow(
-                color: widget.gradientColors.first.withOpacity(0.3),
+                color: widget.gradientColors.first.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -196,15 +196,15 @@ class GlassCard extends StatelessWidget {
     return Container(
       padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: HermesTheme.surfaceDark.withOpacity(0.8),
+        color: HermesTheme.surfaceDark.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -253,7 +253,7 @@ class CircularProgress extends StatelessWidget {
             ),
           ),
           if (center != null)
-            Center(child: center!)
+            Center(child: center)
           else
             Center(
               child: Text(

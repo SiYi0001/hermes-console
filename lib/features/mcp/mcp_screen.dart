@@ -145,7 +145,7 @@ class _McpServerCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
-        border: server.status == 'active' ? Border.all(color: HermesTheme.successGreen.withOpacity(0.3)) : null,
+        border: server.status == 'active' ? Border.all(color: HermesTheme.successGreen.withValues(alpha: 0.3)) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +155,7 @@ class _McpServerCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: (isLocal ? HermesTheme.primaryBlue : HermesTheme.secondaryPurple).withOpacity(0.15),
+                  color: (isLocal ? HermesTheme.primaryBlue : HermesTheme.secondaryPurple).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -176,7 +176,7 @@ class _McpServerCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: (isLocal ? HermesTheme.primaryBlue : HermesTheme.secondaryPurple).withOpacity(0.15),
+                            color: (isLocal ? HermesTheme.primaryBlue : HermesTheme.secondaryPurple).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(server.type, style: TextStyle(fontSize: 10, color: isLocal ? HermesTheme.primaryBlue : HermesTheme.secondaryPurple)),
@@ -281,7 +281,7 @@ class _ToolCard extends StatelessWidget {
         onChanged: (v) => notifier.toggleToolEnabled(tool.name, v),
         secondary: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: _getCategoryColor(tool.category).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(color: _getCategoryColor(tool.category).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
           child: Icon(Icons.extension, color: tool.enabled ? _getCategoryColor(tool.category) : HermesTheme.textSecondary, size: 20),
         ),
         title: Text(tool.name,
@@ -325,22 +325,7 @@ class _ToolCard extends StatelessWidget {
     }
   }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'System':
-        return Icons.terminal;
-      case 'File':
-        return Icons.folder;
-      case 'Network':
-        return Icons.language;
-      case 'Automation':
-        return Icons.smart_toy;
-      case 'Media':
-        return Icons.image;
-      default:
-        return Icons.extension;
-    }
-  }
+
 }
 
 /// Tool Logs Tab
@@ -374,7 +359,7 @@ class _ToolLogCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(12),
-        border: ok ? null : Border.all(color: HermesTheme.errorRed.withOpacity(0.3)),
+        border: ok ? null : Border.all(color: HermesTheme.errorRed.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +368,7 @@ class _ToolLogCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: HermesTheme.primaryBlue.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: HermesTheme.primaryBlue.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
                 child: Text(log.tool, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: HermesTheme.primaryBlue)),
               ),
               const SizedBox(width: 8),

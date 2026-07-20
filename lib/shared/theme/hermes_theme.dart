@@ -170,7 +170,7 @@ class HermesTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primaryBlue.withOpacity(0.5);
+            return primaryBlue.withValues(alpha: 0.5);
           }
           return surfaceElevated;
         }),
@@ -337,7 +337,7 @@ class HermesTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primaryBlue.withOpacity(0.5);
+            return primaryBlue.withValues(alpha: 0.5);
           }
           return lightSurfaceElevated;
         }),

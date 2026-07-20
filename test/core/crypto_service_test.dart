@@ -120,7 +120,6 @@ void main() {
       final bob = await kex.generateKeyPair();
       final charlie = await kex.generateKeyPair();
 
-      final alicePub = await alice.extractPublicKey();
       final bobPub = await bob.extractPublicKey();
       final charliePub = await charlie.extractPublicKey();
 

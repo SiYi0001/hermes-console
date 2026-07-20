@@ -77,10 +77,10 @@ class _GatewayStatusCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [HermesTheme.successGreen.withOpacity(0.15), HermesTheme.primaryBlue.withOpacity(0.1)],
+          colors: [HermesTheme.successGreen.withValues(alpha: 0.15), HermesTheme.primaryBlue.withValues(alpha: 0.1)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: HermesTheme.successGreen.withOpacity(0.3)),
+        border: Border.all(color: HermesTheme.successGreen.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -88,7 +88,7 @@ class _GatewayStatusCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: HermesTheme.successGreen.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: HermesTheme.successGreen.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.hub, color: HermesTheme.successGreen, size: 28),
               ),
               const SizedBox(width: 16),
@@ -184,7 +184,7 @@ class _PlatformCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: HermesTheme.surfaceDark,
           borderRadius: BorderRadius.circular(16),
-          border: channel.connected ? Border.all(color: color.withOpacity(0.3)) : null,
+          border: channel.connected ? Border.all(color: color.withValues(alpha: 0.3)) : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +193,7 @@ class _PlatformCard extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                   child: Icon(channel.icon, color: channel.connected ? color : HermesTheme.textSecondary, size: 20),
                 ),
                 const Spacer(),
@@ -272,7 +272,7 @@ class _ActivityCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
             child: Icon(Icons.campaign, color: color, size: 18),
           ),
           const SizedBox(width: 12),

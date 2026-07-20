@@ -9,15 +9,15 @@ class PerformanceMonitor {
   PerformanceMonitor._internal();
 
   // Metrics collection
-  final _metrics = <String, List<_Metric>>{};
+  final _metrics = <String, List<Metric>>{};
   final _maxMetricsPerKey = 60; // Keep last 60 data points
 
   // Subscribers
-  final _subscribers = <void Function(String, _Metric)>[];
+  final _subscribers = <void Function(String, Metric)>[];
 
   // Throttling
   Timer? _collectionTimer;
-  final _pendingUpdates = <String, _Metric>{};
+  final _pendingUpdates = <String, Metric>{};
   bool _isCollecting = false;
 
   void start() {
@@ -33,7 +33,7 @@ class PerformanceMonitor {
   }
 
   void record(String key, double value) {
-    _pendingUpdates[key] = _Metric(
+    _pendingUpdates[key] = Metric(
       timestamp: DateTime.now(),
       value: value,
     );
@@ -66,19 +66,19 @@ class PerformanceMonitor {
     _isCollecting = false;
   }
 
-  void subscribe(void Function(String, _Metric) callback) {
+  void subscribe(void Function(String, Metric) callback) {
     _subscribers.add(callback);
   }
 
-  void unsubscribe(void Function(String, _Metric) callback) {
+  void unsubscribe(void Function(String, Metric) callback) {
     _subscribers.remove(callback);
   }
 
-  List<_Metric> getMetrics(String key) {
+  List<Metric> getMetrics(String key) {
     return List.unmodifiable(_metrics[key] ?? []);
   }
 
-  _Metric? getLatestMetric(String key) {
+  Metric? getLatestMetric(String key) {
     final list = _metrics[key];
     return list != null && list.isNotEmpty ? list.last : null;
   }
@@ -89,31 +89,31 @@ class PerformanceMonitor {
   }
 }
 
-class _Metric {
+class Metric {
   final DateTime timestamp;
   final double value;
 
-  _Metric({required this.timestamp, required this.value});
+  Metric({required this.timestamp, required this.value});
 }
 
 /// Memory-efficient metrics calculator
 class MetricsCalculator {
-  static double average(List<_Metric> metrics) {
+  static double average(List<Metric> metrics) {
     if (metrics.isEmpty) return 0;
     return metrics.fold(0.0, (sum, m) => sum + m.value) / metrics.length;
   }
 
-  static double min(List<_Metric> metrics) {
+  static double min(List<Metric> metrics) {
     if (metrics.isEmpty) return 0;
     return metrics.map((m) => m.value).reduce((a, b) => a < b ? a : b);
   }
 
-  static double max(List<_Metric> metrics) {
+  static double max(List<Metric> metrics) {
     if (metrics.isEmpty) return 0;
     return metrics.map((m) => m.value).reduce((a, b) => a > b ? a : b);
   }
 
-  static double percentile(List<_Metric> metrics, double p) {
+  static double percentile(List<Metric> metrics, double p) {
     if (metrics.isEmpty) return 0;
     final sorted = metrics.map((m) => m.value).toList()..sort();
     final index = ((sorted.length - 1) * p).round();

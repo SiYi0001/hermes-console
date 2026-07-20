@@ -31,9 +31,9 @@ class HiveInit {
 
   static List<int> _getOrCreateEncryptionKey() {
     const keyBoxName = 'hermes_key_store';
-    var keyBox = Hive.box<List<int>>(keyBoxName);
+    final keyBox = Hive.box<List<int>>(keyBoxName);
     
-    var existingKey = keyBox.get('encryption_key');
+    final existingKey = keyBox.get('encryption_key');
     if (existingKey != null) {
       return existingKey;
     }

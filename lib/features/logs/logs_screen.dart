@@ -17,8 +17,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   String _searchQuery = '';
   bool _autoScroll = true;
 
-  List<String> get _levels => ['all', 'info', 'debug', 'warning', 'error'];
-
   @override
   Widget build(BuildContext context) {
     final allLogs = ref.watch(appStateProvider).logs;
@@ -147,7 +145,7 @@ class _LogsHeader extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: HermesTheme.primaryBlue.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: HermesTheme.primaryBlue.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.article, color: HermesTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),
@@ -201,7 +199,7 @@ class _LevelChip extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(right: 8),
       child: Material(
-        color: isSelected ? activeColor.withOpacity(0.2) : HermesTheme.surfaceDark,
+        color: isSelected ? activeColor.withValues(alpha: 0.2) : HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
@@ -241,9 +239,9 @@ class _LogEntry extends StatelessWidget {
         color: HermesTheme.surfaceDark,
         borderRadius: BorderRadius.circular(8),
         border: log.level == 'error'
-            ? Border.all(color: HermesTheme.errorRed.withOpacity(0.3))
+            ? Border.all(color: HermesTheme.errorRed.withValues(alpha: 0.3))
             : log.level == 'warning'
-                ? Border.all(color: HermesTheme.warningAmber.withOpacity(0.2))
+                ? Border.all(color: HermesTheme.warningAmber.withValues(alpha: 0.2))
                 : null,
       ),
       child: Row(
@@ -253,7 +251,7 @@ class _LogEntry extends StatelessWidget {
           const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: _getLevelColor(log.level).withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+            decoration: BoxDecoration(color: _getLevelColor(log.level).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
             child: Text(level, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _getLevelColor(log.level))),
           ),
           const SizedBox(width: 8),

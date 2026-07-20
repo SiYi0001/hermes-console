@@ -16,12 +16,12 @@ class CompressionService {
     
     try {
       // Use Zlib deflate
-      final compressed = ZLibEncoder().encode(
+      final compressed = const ZLibEncoder().encode(
         data,
         level: _compressionLevel,
       );
       
-      if (compressed != null && compressed.length < data.length) {
+      if (compressed.length < data.length) {
         return _createCompressedFrame(Uint8List.fromList(compressed), isCompressed: true);
       }
       
@@ -46,7 +46,7 @@ class CompressionService {
     }
     
     try {
-      final decompressed = ZLibDecoder().decodeBytes(payload);
+      final decompressed = const ZLibDecoder().decodeBytes(payload);
       return Uint8List.fromList(decompressed);
     } catch (e) {
       // Decompression failed, return raw data

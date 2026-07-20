@@ -368,11 +368,7 @@ class AppLogger {
 
   LogLevel _minLevel = kDebugMode ? LogLevel.debug : LogLevel.info;
 
-  LogLevel get minLevel => _minLevel;
-
-  void setMinLevel(LogLevel level) {
-    _minLevel = level;
-  }
+  set minLevel(LogLevel level) => _minLevel = level;
 
   void debug(String message, {String? tag}) => _log(LogLevel.debug, message, tag);
   void info(String message, {String? tag}) => _log(LogLevel.info, message, tag);

@@ -5,7 +5,6 @@ import 'package:cryptography/cryptography.dart';
 class CryptoService {
   final AesGcm _aesGcm = AesGcm.with256bits();
   SecretKey? _sessionKey;
-  List<int>? _currentNonce;
 
   /// Initialize with a pre-shared key or derive from DH
   Future<void> initializeKey(Uint8List keyBytes) async {
@@ -27,7 +26,6 @@ class CryptoService {
     }
 
     final nonce = _aesGcm.newNonce();
-    _currentNonce = nonce;
     
     final secretBox = await _aesGcm.encrypt(
       plaintext,
@@ -86,7 +84,6 @@ class CryptoService {
   /// Clear session key
   void clearSession() {
     _sessionKey = null;
-    _currentNonce = null;
   }
 
   /// Check if initialized

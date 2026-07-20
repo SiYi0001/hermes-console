@@ -22,7 +22,6 @@ class _AutomationScreenState extends ConsumerState<AutomationScreen> {
 
     final visible = _showDisabled ? tasks : tasks.where((t) => t.enabled).toList();
     final failedCount = tasks.where((t) => t.lastStatus == 'failed').length;
-    final filterEnabled = (bool v) => tasks.where((t) => t.enabled).length;
 
     return Scaffold(
       backgroundColor: HermesTheme.backgroundBlack,
@@ -132,10 +131,10 @@ class _AutomationHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [HermesTheme.primaryBlue.withOpacity(0.2), HermesTheme.secondaryPurple.withOpacity(0.1)],
+          colors: [HermesTheme.primaryBlue.withValues(alpha: 0.2), HermesTheme.secondaryPurple.withValues(alpha: 0.1)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: HermesTheme.primaryBlue.withOpacity(0.3)),
+        border: Border.all(color: HermesTheme.primaryBlue.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -143,7 +142,7 @@ class _AutomationHeader extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: HermesTheme.primaryBlue.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: HermesTheme.primaryBlue.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.schedule, color: HermesTheme.primaryBlue, size: 28),
               ),
               const SizedBox(width: 16),
@@ -159,7 +158,7 @@ class _AutomationHeader extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: HermesTheme.successGreen.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: HermesTheme.successGreen.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
                 child: const Row(
                   children: [
                     Icon(Icons.circle, size: 8, color: HermesTheme.successGreen),
@@ -297,7 +296,7 @@ class _CronTaskCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: HermesTheme.primaryBlue.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+                          decoration: BoxDecoration(color: HermesTheme.primaryBlue.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
                           child: Text(freq, style: const TextStyle(fontSize: 10, color: HermesTheme.primaryBlue)),
                         ),
                         const SizedBox(width: 8),

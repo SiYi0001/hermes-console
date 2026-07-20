@@ -181,10 +181,10 @@ class _P2POverviewCard extends ConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [HermesTheme.primaryBlue.withOpacity(0.12), HermesTheme.secondaryPurple.withOpacity(0.08)],
+          colors: [HermesTheme.primaryBlue.withValues(alpha: 0.12), HermesTheme.secondaryPurple.withValues(alpha: 0.08)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: HermesTheme.primaryBlue.withOpacity(0.15)),
+        border: Border.all(color: HermesTheme.primaryBlue.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +302,7 @@ class _DataRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: color, size: 18)),
+        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: color, size: 18)),
         const SizedBox(width: 12),
         Expanded(child: Text(label, style: const TextStyle(color: HermesTheme.textSecondary, fontSize: 13))),
         Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 14)),
@@ -485,7 +485,7 @@ class _SparklinePainter extends CustomPainter {
     final range = maxVal - minVal;
 
     final paint = Paint()
-      ..color = color.withOpacity(0.6)
+      ..color = color.withValues(alpha: 0.6)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;

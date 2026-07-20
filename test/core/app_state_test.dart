@@ -184,7 +184,7 @@ void main() {
   group('AppState — Cron Tasks', () {
     test('addCronTask appends a task', () {
       final before = notifier.state.cronTasks.length;
-      final task = CronTask(
+      const task = CronTask(
         id: 'cron-1',
         name: 'Daily Backup',
         expression: '0 2 * * *',
@@ -199,7 +199,7 @@ void main() {
     });
 
     test('toggleCronTask flips enabled state', () {
-      notifier.addCronTask(CronTask(
+      notifier.addCronTask(const CronTask(
         id: 'cron-toggle',
         name: 'Toggle',
         expression: '*/5 * * * *',
@@ -215,7 +215,7 @@ void main() {
     });
 
     test('executeCronTask records a lastRun', () {
-      notifier.addCronTask(CronTask(
+      notifier.addCronTask(const CronTask(
         id: 'cron-exec',
         name: 'Exec',
         expression: '0 * * * *',
@@ -303,7 +303,7 @@ void main() {
 
   group('AppState — Profile', () {
     test('updateProfile replaces the profile', () {
-      final newProfile = AgentProfile(
+      const newProfile = AgentProfile(
         id: 'new-id',
         name: 'Updated Agent',
         email: 'agent@hermes.test',
