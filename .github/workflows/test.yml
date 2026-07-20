@@ -11,7 +11,7 @@ jobs:
     name: 静态分析 / Flutter Analyze
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -30,7 +30,7 @@ jobs:
     name: 单元测试 / Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [analyze, unit-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -80,7 +80,7 @@ jobs:
     runs-on: macos-latest
     needs: [analyze, unit-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -97,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [analyze, unit-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
